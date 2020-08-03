@@ -1,0 +1,129 @@
+---
+title: "Re-write of Sierra's Replicate Analysis Using Tidyverse"
+date: '`r Sys.Date()`'
+output: 
+    bookdown::html_document2:
+        toc: true
+        toc_float: true
+        df_print: paged
+        code_folding: hide
+---
+
+# Questions for rewrite analysis
+1. Input data files, specifically list of TSV files and replicate information
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse); packageVersion("tidyverse")
+library(yaml); packageVersion("yaml")
+library(here); packageVersion("here")
+```
+
+# Summary
+Rewriting Sierra's initial replicate analysis for evaluating within and between lab changeseq method performance.
+
+# Approach
+<!-- Brief description of individual analysis steps -->
+
+1. Loading change seq pipeline output
+2. Annotating changeseq data frame with sample pair/ replicate information
+3. Summary/ Statistical Analysis  
+    1. Summary Table  
+    2. StJude - NIST Comparison
+
+# Analysis
+## Loading and Munging data (1 and 2 above)
+
+Loading changeseq output tsv files into a single data frame
+```{r}
+changeseq_lst <- list.files(path = here("data-raw"), 
+                           pattern = "identified_matched.txt",
+                           include.dirs = TRUE, full.names = TRUE, 
+                           recursive = TRUE) %>% 
+    set_names(basename(.))
+
+changeseq_df <- changeseq_lst %>%
+    map_dfr(read_tsv, .id = "changeseq_run")
+```
+
+```{r}
+glimpse(changeseq_df)
+```
+
+```{r}
+unique(changeseq_df$changeseq_run)
+```
+
+
+__NOTE__ - can modify data frame to add lab name, e.g. StJude or NIST, either using file paths or separate data frame.
+Annotating using file names
+```{r}
+## This code is specific to the input file name format
+changeseq_df <- changeseq_df %>% 
+    mutate(lab = if_else(str_detect(changeseq_run, "StJude"),
+                         "StJude", "NIST"),
+           target_site = str_remove(changeseq_run, "StJude_"))
+```
+
+__NOTE__ - The lab, target_site, and/ or changeseq_run variables can be used as grouping variables to calculate within dataset summarise.
+
+
+Annotating data frame with replicate/ info - experimental design
+```{r}
+
+```
+
+
+## Summary/ Statistical Analysis
+## Summary Table
+Replacing code from changeseq_stats.R
+
+_Table structure_  
+
+* Total read count
+* Total on-target read count
+* Percent on-target reads (on-target read count/total read count)
+* Total off-target read count
+* Number of sequences with substitutions only
+* Number sequences with indels only 
+* Number of sequences with two possible representations (substitutions or indels)
+* Percent off-target read count (off-target read count/total read count)
+* Top 25% (based on read count) off-target read count
+
+The following will consider only those with only substitution mismatches:
+* On-target to top 5 or top 25% reads (on-target read count/top 5 off-target read count)
+* On-target to most prevalent off-target read (on-target read count/off-target read with largest read count)
+* Read count for seqs w/ 1 substitution from target sequence
+* Read count for seqs w/ 2 substitutions from target sequence
+* Read count for seqs w/ 3 substitutions from target sequence
+* Read count for seqs w/ 4 substitutions from target sequence
+* Read count for seqs w/ 5 substitutions from target sequence
+* Read count for seqs w/ 6 substitutions from target sequence
+
+
+
+### Summary Table 
+```{r}
+## Potentially use the DT or other packages for visually pleasing table presentation
+summary_tbl %>% DT::datatable()
+```
+
+## St. Jude - NIST Comparison
+re-implementation of code from `CHANGEseq_compare_fulldf.R` and `edited_CHANGEseq_compare_fulldf.R`. 
+These scripts aim to reproduce manuscript Figure 1i. 
+
+
+# Session Information
+## System Information
+```{r}
+sessioninfo::platform_info()
+```
+
+
+## Package Versions
+```{r}
+sessioninfo::package_info() %>% 
+    filter(attached = TRUE) %>% 
+    select(package, loadedversion, date, source) %>%
+    knitr::kable(booktabs = TRUE, row.names = FALSE)
+```
