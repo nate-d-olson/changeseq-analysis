@@ -140,8 +140,22 @@ target_count_df <- changeseq_df %>%
 summary_df <- left_join(total_count_df, target_count_df) %>% 
     mutate(on_target_rate = on_target_count/total_read_count)
 ```
+```{r}
+glimpse(summary_df)
+```
+
+``````{r}
+ggplot(summary_df) + 
+    geom_point(aes(x = target_site, y = on_target_rate, fill = lab), 
+               shape = 21, alpha = 0.5) + 
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90)) +
+        labs(x = "Editing Target Site", y = "On Target Rate", 
+         fill = "Sequencing\nLab")
+```
 
 * Total off-target read count
+* Percent off-target read count (off-target read count/total read count)
 ```{r}
 summary_df <- changeseq_df %>% 
     mutate(Site_Substitution_Number = if_else(is.na(Site_Substitution_Number), -1, Site_Substitution_Number), 
@@ -150,36 +164,93 @@ summary_df <- changeseq_df %>%
     group_by(changeseq_run, lab, target_site) %>% 
     summarise(total_count = sum(Nuclease_Read_Count),
               total_on_target = sum(on_target),
-              total_off_target = sum(off_target))
+              total_off_target = sum(off_target),
+              off_target_ratio = total_off_target/total_count)
 summary_df
+```
+```{r}
+glimpse(summary_df)
 ```
 
 ```{r}
 ggplot(summary_df) + 
-    geom_point(aes(x = target_site, y = on_target_rate, fill = lab), 
+    geom_point(aes(x = target_site, y = total_off_target, fill = lab), 
                shape = 21, alpha = 0.5) + 
-    theme_bw()
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90))+
+    labs(x = "Editing Target Site", y = "Total Off-Target Read Count", 
+         fill = "Sequencing\nLab")
 ```
-
-
-
 
 * Number of sequences with substitutions only
 * Number sequences with indels only 
 * Number of sequences with two possible representations (substitutions or indels)
-* Percent off-target read count (off-target read count/total read count)
-* Top 25% (based on read count) off-target read count
+```{r}
+glimpse(changeseq_df)
+```
+```{r}
+summary_df <- changeseq_df %>%
+    ## seqs with subs only = seq in Site_Sequence col only
+    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
+        ## seqs with indels only = seq in Site_Sequence_Gaps_Allowed col only
+        Indel_Only = if_else(is.na(Site_Sequence_Gaps_Allowed), TRUE, FALSE),
+        ## seqs with two possible reps = seq in both cols
+        Sub_or_Indel = if_else(is.na(Substitution_Only || Indel_Only), FALSE, TRUE)) %>%
+    group_by(changeseq_run, lab, target_site) %>%
+    summarise(total_substitution_only_seqs = sum(Substitution_Only),
+              total_indels_only = sum(Indel_Only),
+              total_sub_or_indel = sum(Sub_or_Indel))
+
+summary_df
+```
+```{r}
+## how do I make a bar plot with this information?
+```
 
 The following will consider only those with only substitution mismatches:
-* On-target to top 5 or top 25% reads (on-target read count/top 5 off-target read count)
+* On-target to top 25% reads (on-target read count/top 25% off-target read count)
+```{r}
+summary_df <- changeseq_df %>%
+    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
+        on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0)))
+     
+    filter(summary_df, Substitution_Only == TRUE) %>%
+        arrange(desc(Nuclease_Read_Count)) %>%
+        ## how do I now only subset the top 25% of the df?
+
+
+```
+
 * On-target to most prevalent off-target read (on-target read count/off-target read with largest read count)
+```{r}
+summary_df <- changeseq_df %>%
+    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
+        on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0))
+
+     
+    filter(summary_df, Substitution_Only == TRUE) %>%
+        arrange(desc(Nuclease_Read_Count)) %>%
+        group_by(changeseq_run, lab, target_site) %>%
+        summarise(total_on_target_count = sum(on_target),
+                  on_target_top_off_target_ratio = total_on_target_count/) ## how do I reference the first row Nuclease Read Count value here?
+    
+        
+```
+
 * Read count for seqs w/ 1 substitution from target sequence
 * Read count for seqs w/ 2 substitutions from target sequence
 * Read count for seqs w/ 3 substitutions from target sequence
 * Read count for seqs w/ 4 substitutions from target sequence
 * Read count for seqs w/ 5 substitutions from target sequence
 * Read count for seqs w/ 6 substitutions from target sequence
-
+```{r}
+summary_df <- changeseq_df %>%
+    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE))
+     
+    filter(summary_df, Substitution_Only == TRUE) %>%
+      group_by(changeseq_run, lab, target_site, Site_Substitution_Number) ## something I'm doing here isn't correct
+      
+```
 
 
 ### Summary Table 
