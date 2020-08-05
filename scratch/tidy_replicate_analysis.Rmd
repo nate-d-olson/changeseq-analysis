@@ -80,7 +80,11 @@ Annotating data frame with replicate/ info - experimental design
 
 
 ## Summary/ Statistical Analysis
-## Summary Table
+### Calculating Summary Metrics
+
+### Summary Metric Analysis
+#### Plots
+#### Table
 Replacing code from `changeseq_stats.R`
 
 _Table structure_  
@@ -279,7 +283,7 @@ changeseq_df %>%
 summary_tbl %>% DT::datatable()
 ```
 
-## St. Jude - NIST Comparison
+## Off-Target Sequence Comparison
 re-implementation of code from `CHANGEseq_compare_fulldf.R` and `edited_CHANGEseq_compare_fulldf.R`. 
 These scripts aim to reproduce manuscript Figure 1i. 
 
