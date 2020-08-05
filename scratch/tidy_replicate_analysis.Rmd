@@ -35,7 +35,9 @@ Rewriting Sierra's initial replicate analysis for evaluating within and between 
 ## Loading and Munging data (1 and 2 above)
 
 Loading changeseq output tsv files into a single data frame
-```{r}
+```{r message = FALSE}
+## Using message = FALSE to avoid printing read_tsv message about column specifications
+
 ## List of changeseq output files
 changeseq_lst <- list.files(path = here("data-raw"), 
                            pattern = "identified_matched.txt",
@@ -203,12 +205,24 @@ summary_df <- changeseq_df %>%
 
 summary_df
 ```
+#%# - line 206: not sure how to code the bar plot. Want to show all 3 summarise variables separated by target site and lab
 ```{r}
 ## how do I make a bar plot with this information?
+summary_df %>% 
+    ## First make the table long
+    gather(key = "metric", value = "value", -changeseq_run, -lab, -target_site) %>% 
+    ggplot() +
+    geom_bar(aes(x = metric, y = value, fill = lab), 
+             position = "dodge", stat = "identity") +
+    ## Split plot by summary metric
+    facet_wrap(~target_site, scales = "free_y") + 
+    theme_bw() + 
+    theme(axis.text.x = element_text(angle = -45, hjust = 0))
 ```
 
 The following will consider only those with only substitution mismatches:
 * On-target to top 25% reads (on-target read count/top 25% off-target read count)
+#%#- line 219: How do I now subset the df to consider only the top 25% of off-target read counts?
 ```{r}
 summary_df <- changeseq_df %>%
     mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
@@ -222,6 +236,7 @@ summary_df <- changeseq_df %>%
 ```
 
 * On-target to most prevalent off-target read (on-target read count/off-target read with largest read count)
+#%#- line 235: since I'm piping into this command, how do I reference the first row$Nuclease_Read_Count of the df?
 ```{r}
 summary_df <- changeseq_df %>%
     mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
@@ -243,6 +258,7 @@ summary_df <- changeseq_df %>%
 * Read count for seqs w/ 4 substitutions from target sequence
 * Read count for seqs w/ 5 substitutions from target sequence
 * Read count for seqs w/ 6 substitutions from target sequence
+#%# - line 251: I'm not doing something correctly here. Want to have bins for 1-6 mismatches and group by target site, lab
 ```{r}
 summary_df <- changeseq_df %>%
     mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE))
