@@ -226,12 +226,13 @@ The following will consider only those with only substitution mismatches:
 ```{r}
 summary_df <- changeseq_df %>%
     mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
-        on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0)))
-     
-    filter(summary_df, Substitution_Only == TRUE) %>%
-        arrange(desc(Nuclease_Read_Count)) %>%
+           on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0)) %>% 
+    filter(Substitution_Only == TRUE) %>%
+        arrange(-Nuclease_Read_Count) %>%
+    ## Use top_frac to get the top 25% - use group_by to capture within run or site analysis
+        top_frac(0.25, wt = Nuclease_Read_Count)
         ## how do I now only subset the top 25% of the df?
-
+summary_df
 
 ```
 
