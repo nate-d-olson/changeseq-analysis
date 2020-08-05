@@ -205,18 +205,23 @@ summary_df <- changeseq_df %>%
 
 summary_df
 ```
-#%# - line 206: not sure how to code the bar plot. Want to show all 3 summarise variables separated by target site and lab
+
+
 ```{r}
 ## how do I make a bar plot with this information?
 summary_df %>% 
     ## First make the table long
     gather(key = "metric", value = "value", -changeseq_run, -lab, -target_site) %>% 
     ggplot() +
-    geom_bar(aes(x = metric, y = value, fill = lab), 
-             position = "dodge", stat = "identity") +
+    geom_bar(aes(x = metric, 
+                 y = value,
+                 fill = lab),
+             position = "dodge", 
+             stat = "identity"
+             ) +
     ## Split plot by summary metric
-    facet_wrap(~target_site, scales = "free_y") + 
-    theme_bw() + 
+    facet_wrap(~target_site, scales = "free_y") +
+    theme_bw() +
     theme(axis.text.x = element_text(angle = -45, hjust = 0))
 ```
 
@@ -238,19 +243,16 @@ summary_df
 
 * On-target to most prevalent off-target read (on-target read count/off-target read with largest read count)
 #%#- line 235: since I'm piping into this command, how do I reference the first row$Nuclease_Read_Count of the df?
+## You can't / don't want to reference the first row instead generate a data frame with the on-target values
 ```{r}
-summary_df <- changeseq_df %>%
-    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
-        on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0))
-
-     
-    filter(summary_df, Substitution_Only == TRUE) %>%
-        arrange(desc(Nuclease_Read_Count)) %>%
-        group_by(changeseq_run, lab, target_site) %>%
-        summarise(total_on_target_count = sum(on_target),
-                  on_target_top_off_target_ratio = total_on_target_count/) ## how do I reference the first row Nuclease Read Count value here?
-    
-        
+changeseq_df %>% 
+    mutate(Site_Substitution_Number = if_else(is.na(Site_Substitution_Number), -1, Site_Substitution_Number), 
+            on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0),
+           off_target = if_else(on_target == 0, Nuclease_Read_Count, 0)) %>% 
+    group_by(changeseq_run, lab, target_site) %>% 
+    summarise(on_target_count = max(on_target),
+              off_target_max = max(off_target)) %>% 
+    mutate(on_off_max_ratio = on_target_count/ off_target_max)
 ```
 
 * Read count for seqs w/ 1 substitution from target sequence
@@ -261,11 +263,12 @@ summary_df <- changeseq_df %>%
 * Read count for seqs w/ 6 substitutions from target sequence
 #%# - line 251: I'm not doing something correctly here. Want to have bins for 1-6 mismatches and group by target site, lab
 ```{r}
-summary_df <- changeseq_df %>%
-    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE))
-     
-    filter(summary_df, Substitution_Only == TRUE) %>%
-      group_by(changeseq_run, lab, target_site, Site_Substitution_Number) ## something I'm doing here isn't correct
+changeseq_df %>%
+    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE)) %>% 
+    filter(Substitution_Only == TRUE,
+           Site_Substitution_Number > 0) %>% 
+    group_by(changeseq_run, lab, target_site, Site_Substitution_Number) %>% 
+    summarise(read_count = sum(Nuclease_Read_Count))
       
 ```
 
