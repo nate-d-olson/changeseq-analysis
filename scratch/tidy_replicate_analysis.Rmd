@@ -166,10 +166,16 @@ off_target_seq_align_df <- summary_df%>%
     summarise(total_substitution_only_seqs = sum(Substitution_Only),
               total_indels_only = sum(Indel_Only),
               total_sub_or_indel = sum(Sub_or_Indel))
-
-off_target_ratio
-off-target_seq_align_df
 ```
+
+```{r}
+off_target_ratio
+```
+
+```{r}
+off_target_seq_align_df
+```
+
 
 CONSIDERING SEQUENCES THAT HAVE SUBSTITUTIONS ONLY...
 * On-target to top 25% reads (on-target read count/top 25% off-target read count)
@@ -187,10 +193,15 @@ top_quarter_off_target_df <- off_target_df %>%
       top_frac(0.25, wt = Nuclease_Read_Count) %>%
   group_by(changeseq_run, lab, target_site) %>% 
   summarise(total_read_count = sum(Nuclease_Read_Count))
-
-off-target_df
-top_quarter_off-target_df
 ```
+```{r}
+off_target_df
+```
+
+```{r}
+top_quarter_off_target_df
+```
+
 
 * On-target to most prevalent off-target read (on-target read count/off-target read with largest read count)
 ```{r}
@@ -240,7 +251,17 @@ ggplot(total_count_df) +
          fill = "Lab")
 ```
 
-Sample F for NSS has a drastically lower read count. This was found to be a copy/paste error in their manifest file. They were pointing to sample E's read fastq files. For all other samples, my bioinformatics run of CHANGE-Seq is identical to their results in total read counts across the target sites which means that the person running the bioinformatics pipeline doesn't introduce variability - in this metric, at least. Regarding the sequencing at NIST vs. the sequencing at St. Jude, our sequenging runs have consistently lower total read counts. 
+Sample F for NSS has a drastically lower read count. 
+This was found to be a copy/paste error in their manifest file. 
+They were pointing to sample E's read fastq files. 
+<!-- Do you mean when comparing NNN and NSN? 
+Be careful with making statements that the results are identical or does not introduce any variability. 
+Think about why they are identical. 
+What are the potential sources of variability?
+Is it expected that they are identical? Could it be a bug in your code? I know we have talked about this but these are important questions to ask of future datasets.
+-->
+For all other samples, my bioinformatics run of CHANGE-Seq is identical to their results in total read counts across the target sites which means that the person running the bioinformatics pipeline doesn't introduce variability - in this metric, at least. 
+Regarding the sequencing at NIST vs. the sequencing at St. Jude, our sequencing runs have consistently lower total read counts. 
 
 
 
@@ -329,6 +350,11 @@ As seen with the on-target rate considering total read counts, NIST has higher r
 * Plot of read counts per substitution number for each sample
 ```{r}
 substitution_count_df %>% 
+  ggplot() + 
+  geom_point(aes(x = Site_Substitution_Number, y = read_count, fill = lab), 
+             shape = 21, alpha = 0.25) + 
+  facet_wrap(~target_site, scales = "free_y") + 
+  theme_bw()
 ```
 
 
