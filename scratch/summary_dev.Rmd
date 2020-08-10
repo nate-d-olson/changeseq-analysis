@@ -1,5 +1,5 @@
 ---
-title: "Re-write of Sierra's Replicate Analysis Using Tidyverse"
+title: "Summary Re-write of Sierra's Replicate Analysis Using Tidyverse"
 date: '`r Sys.Date()`'
 output: 
     bookdown::html_document2:
@@ -8,9 +8,6 @@ output:
         df_print: paged
         code_folding: hide
 ---
-
-# Questions for rewrite analysis
-1. Input data files, specifically list of `identified_matched.txt` files and replicate information.
 
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
@@ -23,8 +20,33 @@ library(stringr); packageVersion("stringr")
 # Summary
 Rewriting Sierra's initial replicate analysis for evaluating within and between lab changeseq method performance.
 
+Determine sources of variability for the CHANGE-Seq assay.
+
 # Approach
-<!-- Brief description of individual analysis steps -->
+
+1. Samples are run through the CHANGE-Seq wet lab procedure and the library prepped smples are split between NIST & St. Jude. 
+2. Samples are pooled and sequenced. 
+3. Resulting FASTQ files are handed off to me and run through the CHANGE-Seq program. 
+4. Each samples produces an "identified_matched.txt" file which is what is used and described in this document. 
+
+**Downstream Bioinformatic Analysis:**
+1. Loading CHANGE-Seq pipeline output (namely - "identified_matched.txt" files)
+2. Annotating CHANGE-Seq data frame with sample pair/ replicate information
+3. Summary/ Statistical Analysis  
+    1. Summary Table  
+    2. StJude - NIST Comparison
+
+# Data Overview
+## Samples A-F Spring 2020
+
+**Letter ID** | **Target Site**
+--------------|-----------------
+A             | CCR5_site_3
+B             | CCR5_site_8
+C             | TRAC_site_1
+D             | CXCR4_site_7
+E             | CTLA4_site_9
+F             | AAVS1_site_14
 
 **Experimental Factors**
 N: NIST
@@ -36,18 +58,63 @@ NNN         | NIST        | NIST               | NIST
 NSN         | NIST        | St. Jude           | NIST
 NSS         | NIST        | St. Jude           | St. Jude
 
+
+### NN
+
+**Sample**       | **File Name**                             | **File Size**
+-----------------|-------------------------------------------|-------------
+A, read 1        | A_S1_L001_R1_001_trimmed.fq               | 956.9 MB
+A, read 2        | A_S1_L001_R2_001_trimmed.fq               | 874.8 MB 
+B, read 1        | B_S2_L001_R1_001_trimmed.fq               | 647.9 MB 
+B, read 2        | B_S2_L001_R2_001_trimmed.fq               | 623.7 MB 
+C, read 1        | C_S3_L001_R1_001_trimmed.fq               | 743.2 MB 
+C, read 2        | C_S3_L001_R2_001_trimmed.fq               | 706.6 MB 
+D, read 1        | D_S4_L001_R1_001_trimmed.fq               | 935.6 MB 
+D, read 2        | D_S4_L001_R2_001_trimmed.fq               | 739.4 MB
+E, read 1        | E_S5_L001_R1_001_trimmed.fq               | 741.1 MB 
+E, read 2        | E_S5_L001_R2_001_trimmed.fq               | 701.1 MB 
+F, read 1        | F_S6_L001_R1_001_trimmed.fq               | 845.6 MB 
+F, read 2        | F_S6_L001_R2_001_trimmed.fq               | 817.3 MB 
+Neg Ctrl, read 1 | neg-neg-control_S7_L001_R1_001_trimmed.fq | 858.1 MB
+Neg Ctrl, read 2 | neg-neg-control_S7_L001_R2_001_trimmed.fq | 803 MB
+
+### NS
+
+**Sample**       | **File Name**                             | **File Size**
+-----------------|-------------------------------------------|-------------
+A, read 1        | CRL1551_NIST_S1_R1_001.fastq              | 956.9 MB
+A, read 2        | CRL1551_NIST_S1_R2_001.fastq              | 874.8 MB 
+B, read 1        | CRL1552_NIST_S2_R1_001.fastq              | 647.9 MB 
+B, read 2        | CRL1552_NIST_S2_R2_001.fastq              | 623.7 MB 
+C, read 1        | CRL1553_NIST_S3_R1_001.fastq              | 743.2 MB 
+C, read 2        | CRL1553_NIST_S3_R2_001.fastq              | 706.6 MB 
+D, read 1        | CRL1554_NIST_S4_R1_001.fastq              | 935.6 MB 
+D, read 2        | CRL1554_NIST_S4_R2_001.fastq              | 739.4 MB
+E, read 1        | CRL1555_NIST_S5_R1_001.fastq              | 741.1 MB 
+E, read 2        | CRL1555_NIST_S5_R2_001.fastq              | 701.1 MB 
+F, read 1        | CRL1556_NIST_S6_R1_001.fastq              | 845.6 MB 
+F, read 2        | CRL1556_NIST_S6_R2_001.fastq              | 817.3 MB 
+Neg Ctrl, read 1 | neg-neg-CRL1557_NIST_S7_R1_001.fastq      | 858.1 MB
+Neg Ctrl, read 2 | neg-neg-CRL1557_NIST_S7_R2_001.fastq      | 803 MB
+
+### Notes on Spring2020 Samples
+
+![Sequencing Information for A-F Samples Spring 2020](/Users/sdm8/Documents/Projects/CHANGEseq/analysis/A-F/image.png)
+To account for extra sequencing cycles, samples sequenced at NIST were trimmed via: 
+```{r, engine = 'bash', eval = FALSE}
+seqtk trimfq -e 150
+```
+
+Both locations pooled samples according to St. Jude's qPCR quantification values. 
+
+Samples run with CHANGE-Seq v1.2.7
+
 *St Jude has not yet re-run our sequencing of the original A-F samples. (NNS)*
 
-1. Loading CHANGE-Seq pipeline output (namely - "identified_matched.txt" files)
-2. Annotating CHANGE-Seq data frame with sample pair/ replicate information
-3. Summary/ Statistical Analysis  
-    1. Summary Table  
-    2. StJude - NIST Comparison
-
 # Analysis
-## Loading and Munging data (1 and 2 above)
+## Loading and Munging data 
 
-Loading changeseq output tsv files into a single data frame
+Loading CHANGE-Seq output txt files into a single data frame:
 ```{r message = FALSE}
 ## Using message = FALSE to avoid printing read_tsv message about column specifications
 
@@ -62,13 +129,10 @@ changeseq_df <- changeseq_lst %>%
     map_dfr(read_tsv, .id = "changeseq_run")
 ```
 
-
 ```{r}
 unique(changeseq_df$changeseq_run)
 ```
 
-
-__NOTE__ - can modify data frame to add lab name, e.g. StJude or NIST, either using file paths or separate data frame.
 Annotating using file names
 ```{r}
 ## This code is specific to the input file name format
@@ -92,11 +156,7 @@ changeseq_anno_df <- changeseq_df %>%
   mutate(wet_lab = if_else(wet_lab == "N", "NIST", "StJude"),
          seq_lab = if_else(seq_lab == "N", "NIST", "StJude"),
          bioinf = if_else(bioinf == "N", "NIST", "StJude"))
-
-changeseq_anno_df
 ```
-
-__NOTE__ - The lab, target_site, and/ or changeseq_run variables can be used as grouping variables to calculate within dataset summarise.
 
 ## Summary/ Statistical Analysis
 ### Calculating Summary Metrics
@@ -106,8 +166,6 @@ __NOTE__ - The lab, target_site, and/ or changeseq_run variables can be used as 
 total_count_df <- changeseq_anno_df %>% 
     group_by(changeseq_run, lab, target_site) %>% 
     summarise(total_read_count = sum(Nuclease_Read_Count))
-
-total_count_df
 ```
 
 * Total on-target read count
@@ -116,17 +174,12 @@ target_count_df <- changeseq_anno_df %>%
     filter(Site_Substitution_Number == 0) %>% 
     rename(on_target_count = Nuclease_Read_Count) %>% 
     select(changeseq_run, lab, target_site, on_target_count)
-
-target_count_df
 ```
-
 
 * Percent on-target read count (on-target read count/total read count)
 ```{r}
 on_off_target_df <- left_join(total_count_df, target_count_df) %>% 
     mutate(on_target_rate = on_target_count/total_read_count)
-
-on_off_target_df
 ```
 
 * Total off-target read count
@@ -146,7 +199,7 @@ summary_df <- changeseq_anno_df %>%
             ## seqs with two possible reps = seq in both cols
             Sub_or_Indel = if_else(is.na(Substitution_Only || Indel_Only), FALSE, TRUE))
 ```
-  
+
 * Number of sequences with substitutions only
 * Number sequences with indels only 
 * Number of sequences with two possible representations (substitutions or indels)
@@ -166,15 +219,6 @@ off_target_seq_align_df <- summary_df%>%
               total_sub_or_indel = sum(Sub_or_Indel))
 ```
 
-```{r}
-off_target_ratio
-```
-
-```{r}
-off_target_seq_align_df
-```
-
-
 CONSIDERING SEQUENCES THAT HAVE SUBSTITUTIONS ONLY...
 * On-target to top 25% reads (on-target read count/top 25% off-target read count)
 ```{r}
@@ -193,15 +237,6 @@ top_quarter_off_target_df <- off_target_df %>%
   summarise(top_quarter_offtarget_readcount = sum(Nuclease_Read_Count))
 ```
 
-```{r}
-off_target_df
-```
-
-```{r}
-top_quarter_off_target_df
-```
-
-
 * On-target to most prevalent off-target read (on-target read count/off-target read with largest read count)
 ```{r}
 ## create df to plot ratio between on-target read count and most prevalent off-target read count per sample
@@ -213,8 +248,6 @@ on_top_off_df <- summary_df %>%
     summarise(on_target_count = max(on_target),
               off_target_max = max(off_target)) %>% 
     mutate(on_off_max_ratio = on_target_count/ off_target_max)
-
-on_top_off_df
 ```
 
 * Read count for seqs w/ 1 substitution from target sequence
@@ -231,10 +264,7 @@ substitution_count_df <- summary_df %>%
            Site_Substitution_Number > 0) %>% 
     group_by(changeseq_run, lab, target_site, Site_Substitution_Number) %>% 
     summarise(substitution_read_count = sum(Nuclease_Read_Count))
-
-substitution_count_df      
 ```
-
 
 ### Summary Metric Analysis
 #### Plots
@@ -250,21 +280,7 @@ ggplot(total_count_df) +
          fill = "Lab")
 ```
 
-Sample F for NSS has a drastically lower read count. 
-This was found to be a copy/paste error in their manifest file. 
-They were pointing to sample E's read fastq files. 
-<!-- Do you mean when comparing NNN and NSN? 
-Be careful with making statements that the results are identical or does not introduce any variability. 
-Think about why they are identical. 
-What are the potential sources of variability?
-Is it expected that they are identical? Could it be a bug in your code? I know we have talked about this but these are important questions to ask of future datasets.
--->
-For all other samples, my bioinformatics run of CHANGE-Seq is identical to their results in total read counts across the target sites which means that the person running the bioinformatics pipeline doesn't introduce variability - in this metric, at least. 
-Regarding the sequencing at NIST vs. the sequencing at St. Jude, our sequencing runs have consistently lower total read counts. 
-
-
-
-
+Sample F for NSS has a drastically lower total read count when compared to NNN and NSN. St. Jude's CHANGE-Seq manifest file was pointing to sample E's read fastq files for sample F. Regarding the sequencing at NIST vs. the sequencing at St. Jude, our sequencing runs have consistently lower total read counts. Potential sources of variability: Sequencing and Person running bioinformatics. 
 
 * Bar Plot of On-Target Read Counts per Sample
 ```{r}
@@ -276,8 +292,7 @@ ggplot(target_count_df) +
     labs(x = "Total On-Target Read Count", y = "Editing Target Site", 
          fill = "Lab")
 ```
-Consistent pattern (disregarding sample F from St. Jude's sequenced and bioinformatics) of identical values between my run and St. Jude's run of CHANGE-Seq on their sequenced samples and NIST with lower values for reads except for sample C and D where our on-target read count is just slightly more than that of St. Jude's sequenced samples.  
-
+Consistent pattern (disregarding sample F from St. Jude's sequenced and bioinformatics) of similar values between my run and St. Jude's run of CHANGE-Seq on their sequenced samples and NIST with lower values for reads except for sample C and D where our on-target read count is just slightly more than that of St. Jude's sequenced samples.  
 
 *Scatter Plot of On-Target Read Count/Total Read Count
 ``````{r}
@@ -303,7 +318,6 @@ ggplot(off_target_ratio) +
 ```
 The rates of the off-target sequences are generally all higher than that of the on-target rates. Like the on-target rates, samples A, E, and F are similar in value. Samples B, C, and D have variance with the inverse of the above - the off-target rates are higher for the St. Jude-sequenced samples than that of the NIST-sequenced samples. 
 
-
 * Paneled bar plot showing off-target sequence alignment details
 ```{r}
 off_target_seq_align_df %>% 
@@ -321,8 +335,7 @@ off_target_seq_align_df %>%
     theme_bw() +
     theme(axis.text.x = element_text(angle = -45, hjust = 0))
 ```
-The off-target sequences are aligned to the target sequence. These are binned in the following manner: in order to align properly to the target sequence, the off-target sequence could be resolve with substitutions (and assigned a substitution number), gaps (insertions or deletions) or by both possibilities. Here, I have binned them accordingly. As before, no differences are observed between the samples sequenced at St. Jude but run through the CHANGE-Seq bioinformatics pipeline by me and St. Jude, however, variance is observed between the samples sequenced at NIST vs. St. Jude. For samples A and B, NIST-sequenced off-target reads are overall in lower numbers as compared to St. Jude.
-
+The off-target sequences are aligned to the target sequence. These are binned in the following manner: in order to align properly to the target sequence, the off-target sequence could be resolve with substitutions (and assigned a substitution number), gaps (insertions or deletions) or by both possibilities. Here, I have binned them accordingly. As before, no major differences are observed between the samples sequenced at St. Jude but run through the CHANGE-Seq bioinformatics pipeline by me and St. Jude, however, variance is observed between the samples sequenced at NIST vs. St. Jude. For samples A and B, NIST-sequenced off-target reads are overall in lower numbers as compared to St. Jude.
 
 * Bar plot of top 25% off-target read counts
 ```{r}
@@ -334,6 +347,7 @@ ggplot(top_quarter_off_target_df) +
     labs(x = "Total Read Count of Top 25% Off-Targets", y = "Editing Target Site", 
          fill = "Lab")
 ```
+
 * Scatter plot showing the ratio of on-target read counts to the off-target sequence with the highest read count
 ``````{r}
 ggplot(on_top_off_df) + 
@@ -356,78 +370,29 @@ substitution_count_df %>%
   theme_bw()
 ```
 
-####################################### EVERYTHING ABOVE TRANSFERRED TO FINAL DOC 2020-08-10
-
-#### Table
-Replacing code from `changeseq_stats.R`
-
-_Table structure_  
-
-```{r}
-## combine the dfs that hold total read count, total on-target read count, total off-target read count, off-target ratio & 
-## total read counts with substitution only, total read counts with indels only, total read counts with sub/indel
-combined_df <-merge(x = off_target_ratio, y = off_target_seq_align_df[ , c("changeseq_run", "total_substitution_only_seqs", "total_indels_only", "total_sub_or_indel")], by = "changeseq_run", all.x=TRUE)
-
-## combine the dfs that hold above ^ & total read counts for top quarter of off-target seqs
-combined_df2 <- merge(x = combined_df, y = top_quarter_off_target_df[,c("changeseq_run", "top_quarter_offtarget_readcount")], by = "changeseq_run", all.x=TRUE)
-
-## combine the dfs that hold above ^ & read counts for most prevalent off-target sequence, and the ratio of on-target to that number
-summ_table <- merge(x = combined_df2, y = on_top_off_df[,c("changeseq_run", "off_target_max", "on_off_max_ratio")], by = "changeseq_run", all.x=TRUE)
-
-## combine the dfs that hold above ^ & unique site substitution number for each changeseq_run and the total read counts for those 
-summary_table <- merge(x = summ_table, y = substitution_count_df[,c("changeseq_run", "Site_Substitution_Number", "substitution_read_count")], by = "changeseq_run", all.x=TRUE)
-
-## view summary table
-summary_table
-
-## write out summary table
-outpath = paste0(here("summary_stats_table.tsv"))
-write_tsv(summary_table, path = outpath, na = "NA", append = FALSE, col_names = TRUE, quote_escape = "double")
-summary_table
-```
-
-### Summary Table 
-```{r}
-## Potentially use the DT or other packages for visually pleasing table presentation
-summary_table %>% DT::datatable()
-```
-
-**Summary Stats Table Column Headers**
-
- [1] **"changeseq_run":** lab identifiers, sample letter ID, target site                  
- [2] **"lab":** 3-letter identifiers for wet lab, sequencing lab, and bioinformatics lab; **N**IST, **S**t. Jude                           
- [3] **"target_site":** target site                   
- [4] **"total_count":** total read count for that sample (both on and off-target)                   
- [5] **"total_on_target":** total read count for the on-target sequence for that sample                
- [6] **"total_off_target":** total read count for the off-target sequences for that sample                
- [7] **"off_target_ratio":** total on-target read count/total off-target read count               
- [8] **"total_substitution_only_seqs":** total read count for the off-target sequences that are resolved in alignment with nucleotide substitutions only  
- [9] **"total_indels_only":** total read count for the off-target sequences that are resolved in alignment with gaps (indels) only              
- [10] **"total_sub_or_indel":** total read count for the off-target sequences that are resolved in alignment with substitutions or gaps             
- [11] **"top_quarter_offtarget_readcount":** the total read count for the top quarter of off-target reads (sorted by decreasing read count) 
- [12] **"off_target_max":** the read count for the most prevalent off-target sequence (off-target sequence with largest read count)                 
-[13] **"on_off_max_ratio":** on-target read count/read count for most prevalent off-target sequence                 
-[14] **"Site_Substitution_Number":** each sample is represented in "changeseq_run" with all unique number of substitutions found in that sample - reported in this column       
-[15] **"substitution_read_count":** the total read count for each substitution number  
 
 
 
-## Off-Target Sequence Comparison
-re-implementation of code from `CHANGEseq_compare_fulldf.R` and `edited_CHANGEseq_compare_fulldf.R`. 
-These scripts aim to reproduce manuscript Figure 1i. 
 
 
-# Session Information
-## System Information
-```{r}
-sessioninfo::platform_info()
-```
 
 
-## Package Versions
-```{r}
-sessioninfo::package_info() %>% 
-    filter(attached = TRUE) %>% 
-    select(package, loadedversion, date, source) %>%
-    knitr::kable(booktabs = TRUE, row.names = FALSE)
-```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
