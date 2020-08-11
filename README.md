@@ -9,7 +9,10 @@ Specific things to call attention to:
 
 Wrote chunk for the summary table starting on line 361
 -For this, is there a better way to...
-1. Combine specific columns of data frames in one chunk without having to make multiple variables? Can I have it like this with the multuple merge() functions but just pipe so that one variable is being made and I'm piping 3 times?
+1. Combine specific columns of data frames in one chunk without having to make multiple variables? Can I have it like this with the multuple merge() functions but just pipe so that one variable is being made and I'm piping 3 times?  
+
+    * Use the `*_join` functions to combine data frames.
+
 2. Up until I combine the final df (substitution_count_df, line 378), each changeseq_run row is unique. However, this column reports the number of substitutions, unique for each sample. So one sample can now have multiple rows of the same information up until this column. Is there a better way to incorporate this information? Perhaps as columns rather than rows? 
 
 For instance.. 

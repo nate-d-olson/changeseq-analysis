@@ -363,22 +363,14 @@ Replacing code from `changeseq_stats.R`
 
 _Table structure_  
 
+__NOTE__ Might want to rename columns for consistency, e.g. total_substitution_only_seqs to total_subs_only, and remove redundant columns.
+
 ```{r}
-## combine the dfs that hold total read count, total on-target read count, total off-target read count, off-target ratio & 
-## total read counts with substitution only, total read counts with indels only, total read counts with sub/indel
-combined_df <-merge(x = off_target_ratio, y = off_target_seq_align_df[ , c("changeseq_run", "total_substitution_only_seqs", "total_indels_only", "total_sub_or_indel")], by = "changeseq_run", all.x=TRUE)
-
-## combine the dfs that hold above ^ & total read counts for top quarter of off-target seqs
-combined_df2 <- merge(x = combined_df, y = top_quarter_off_target_df[,c("changeseq_run", "top_quarter_offtarget_readcount")], by = "changeseq_run", all.x=TRUE)
-
-## combine the dfs that hold above ^ & read counts for most prevalent off-target sequence, and the ratio of on-target to that number
-summ_table <- merge(x = combined_df2, y = on_top_off_df[,c("changeseq_run", "off_target_max", "on_off_max_ratio")], by = "changeseq_run", all.x=TRUE)
-
-## combine the dfs that hold above ^ & unique site substitution number for each changeseq_run and the total read counts for those 
-summary_table <- merge(x = summ_table, y = substitution_count_df[,c("changeseq_run", "Site_Substitution_Number", "substitution_read_count")], by = "changeseq_run", all.x=TRUE)
-
-## view summary table
-summary_table
+## Combining summary metric data frames
+summary_table <- left_join(off_target_ratio, off_target_seq_align_df) %>% 
+  left_join(top_quarter_off_target_df) %>% 
+  left_join(on_top_off_df) %>% 
+  left_join(substitution_count_df)
 
 ## write out summary table
 ## Note - do not need to use paste with here, here converts the vector of character strings to a file path
@@ -386,6 +378,8 @@ write_tsv(summary_table, path = here("data", "summary_stats_table.tsv"),
           na = "NA", append = FALSE, col_names = TRUE, quote_escape = "double")
 summary_table
 ```
+
+
 
 ### Summary Table 
 ```{r}
