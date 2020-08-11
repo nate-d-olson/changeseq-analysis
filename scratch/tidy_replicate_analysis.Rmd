@@ -381,8 +381,9 @@ summary_table <- merge(x = summ_table, y = substitution_count_df[,c("changeseq_r
 summary_table
 
 ## write out summary table
-outpath = paste0(here("summary_stats_table.tsv"))
-write_tsv(summary_table, path = outpath, na = "NA", append = FALSE, col_names = TRUE, quote_escape = "double")
+## Note - do not need to use paste with here, here converts the vector of character strings to a file path
+write_tsv(summary_table, path = here("data", "summary_stats_table.tsv"), 
+          na = "NA", append = FALSE, col_names = TRUE, quote_escape = "double")
 summary_table
 ```
 
