@@ -370,8 +370,8 @@ __NOTE__ Might want to rename columns for consistency, e.g. total_substitution_o
 sub_counts_wide_df <- substitution_count_df %>% 
   mutate(Site_Substitution_Number = paste("sub",Site_Substitution_Number, "count", 
                                           sep = "_")) %>%
-  spread(Site_Substitution_Number, substitution_read_count, fill = 0)
-  
+  pivot_wider(names_from = Site_Substitution_Number, 
+              values_from = substitution_read_count, values_fill = 0)
 
 ## Combining summary metric data frames
 summary_table <- left_join(off_target_ratio, off_target_seq_align_df) %>% 
