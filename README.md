@@ -34,3 +34,5 @@ changeseq_run     | <.....> | sub_number_1_readcount | sub_number_2_readcount | 
 NNN_A_CCR5_site_3 |         | 210                    | 0                      | 112                    | 542                    | 790                   | 962     
 
 We'll probably have to tweak the table generation code?
+
+    Using the spread function to make a wide table

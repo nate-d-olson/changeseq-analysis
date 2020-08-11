@@ -366,11 +366,18 @@ _Table structure_
 __NOTE__ Might want to rename columns for consistency, e.g. total_substitution_only_seqs to total_subs_only, and remove redundant columns.
 
 ```{r}
+## Making substitution count data frame wide for join
+sub_counts_wide_df <- substitution_count_df %>% 
+  mutate(Site_Substitution_Number = paste("sub",Site_Substitution_Number, "count", 
+                                          sep = "_")) %>%
+  spread(Site_Substitution_Number, substitution_read_count, fill = 0)
+  
+
 ## Combining summary metric data frames
 summary_table <- left_join(off_target_ratio, off_target_seq_align_df) %>% 
   left_join(top_quarter_off_target_df) %>% 
   left_join(on_top_off_df) %>% 
-  left_join(substitution_count_df)
+  left_join(sub_counts_wide_df)
 
 ## write out summary table
 ## Note - do not need to use paste with here, here converts the vector of character strings to a file path
