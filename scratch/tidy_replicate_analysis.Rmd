@@ -418,6 +418,60 @@ summary_table %>% DT::datatable()
 re-implementation of code from `CHANGEseq_compare_fulldf.R` and `edited_CHANGEseq_compare_fulldf.R`. 
 These scripts aim to reproduce manuscript Figure 1i. 
 
+Figures 
+1. venn diagram comparing replicates - genomic coordinates/ seq (check for multiple seqs)
+2. Figure 1i - read count scatter plot rep1 vs rep2 log10 scales - only overlapping, and all
+3. excel point plots
+
+
+```{r}
+glimpse(off_target_df)
+```
+
+```{r}
+off_target_scatter_df <- off_target_df %>% 
+  select(Chromosome, Start, End, Nuclease_Read_Count, target_site, lab)
+  
+```
+
+```{r}
+(nsn_v_nss <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 1) %>% 
+  ggplot() + geom_point(aes(x = NSN, y = NSS), alpha = 0.25) + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw())
+```
+```{r}
+(nsn_v_nnn <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 1) %>% 
+  ggplot() + geom_point(aes(x = NSN, y = NNN), 
+                        color = "darkblue", fill = "darkorange",
+                        shape = 21, alpha = 0.25) + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site) + 
+  theme_bw())
+```
+
+```{r}
+(nss_v_nnn <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+   filter(NSS != 0, NNN != 0) %>%
+  ggplot(aes(x = NSS, y = NNN)) + 
+   geom_point(alpha = 0.25) + 
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw())
+```
+```{r fig.height= 6}
+ggpubr::ggarrange(nsn_v_nss, nsn_v_nnn, nss_v_nnn, ncol = 3)
+```
+
+
 
 # Session Information
 ## System Information
