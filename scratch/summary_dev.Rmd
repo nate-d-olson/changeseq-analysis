@@ -340,7 +340,7 @@ The off-target sequences are aligned to the target sequence. These are binned in
 * Bar plot of top 25% off-target read counts
 ```{r}
 ggplot(top_quarter_off_target_df) + 
-    geom_bar(aes(x = target_site, y = total_read_count, fill = lab), 
+    geom_bar(aes(x = target_site, y = top_quarter_offtarget_readcount, fill = lab), 
              position = "dodge", stat = "identity") +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 

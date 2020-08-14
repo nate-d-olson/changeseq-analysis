@@ -4,35 +4,26 @@ In the tidy_replicate_analysis.Rmd file:
 
 Specific things to call attention to:
 
-- line 284: would a different kind of graph be better? Probably but I need to think about it. We can chat about plotting next week. *sounds good*
-- line 330: how do I make a plot similar to that on line 288-303 where each panel has a sample and x axis has substitution number. I don't think I'm understanding the code in that plot.  - Added the plot I think you were looking for. *yes- can you explain the facet_wrap line when we meet next?*
+-line 413: I stil ldon't understand the code to make paneled bar plots. Where do you define x and y? Metric and Value _ I need x = sub number and y = read count but paneled accroding to target site and lab as the 3 bars per plot... once that is done then the next item on this list is my next question
 
-Wrote chunk for the summary table starting on line 361
--For this, is there a better way to...
-1. Combine specific columns of data frames in one chunk without having to make multiple variables? Can I have it like this with the multuple merge() functions but just pipe so that one variable is being made and I'm piping 3 times?  
+-line 395 & 403: same plots but one is scatter and other is bar. I need to find a way to plot the indel_only read counts and sub_or_indel read counts. Prior, I was giving it a sub number of 10 and 11 in order to plot it on the same graph and just defining it that way in the legend.
 
-    * Use the `*_join` functions to combine data frames.
+-line 353 how to change xy axis labels
 
-2. Up until I combine the final df (substitution_count_df, line 378), each changeseq_run row is unique. However, this column reports the number of substitutions, unique for each sample. So one sample can now have multiple rows of the same information up until this column. Is there a better way to incorporate this information? Perhaps as columns rather than rows? 
+- line 496: This is not complete and I can't really figure out how to do it the tidy way. I need to tally each time a genomic coordinate is and isnt shared between labs in a pairwise fashion. I am kind of there but I need to 1) alter or add another if_else statement  - the way I have it now is like or but I think that it should be maybe case_when so I can write something like "if is.na(NSN) == FALSE & is.na(NNN) == TRUE" blah Idk everytime I start to think about it it's like a really large set of code. Then to summarise I'll need to tally the NSN unique, NNN unique and NSN_NNN overlap column.  
 
-For instance.. 
+- line 574: I'm passing all 3 plots but it's just repeating the first one 3 times -- "Paneled view of pairwise lab comparisons of all off-target genomic coordinates and their respective read counts."
 
-Instead of: 
+__NEXT STEPS__
 
-changeseq_run     | <.....> | Site Subsitution Number | Substitution Read Count
-------------------|---------|-------------------------|-------------------------
-NNN_A_CCR5_site_3 |         | 1                       | 210         
-NNN_A_CCR5_site_3 |         | 3                       | 112
-NNN_A_CCR5_site_3 |         | 4                       | 542
-NNN_A_CCR5_site_3 |         | 5                       | 790
-NNN_A_CCR5_site_3 |         | 6                       | 962
-
-we have something like this:
-
-changeseq_run     | <.....> | sub_number_1_readcount | sub_number_2_readcount | sub_number_3_readcount | sub_number_4_readcount | sub_number_5_readcount| sub_number_6_readcount
-------------------|---------|------------------------|------------------------|------------------------|------------------------|-----------------------|-----------------------
-NNN_A_CCR5_site_3 |         | 210                    | 0                      | 112                    | 542                    | 790                   | 962     
-
-We'll probably have to tweak the table generation code?
-
-    Using the spread function to make a wide table
+- For each target site, record the unique read count value across labs and then tally how many times that read count appears in the off-target data frame
+- uploading two excel files that Samantha has done additional work with. She would like for us to include these calculations. 
+  * The "Summary" tab in the "Fig1i_A-F_Plots_SM split plots" workbook 
+  & 
+  * The "Summary 1-12" & "Summary A-F" in the "Replicate Stats_St. Jude 1-12_A-F" workbook. 
+  
+  She did say:
+  
+  > the calculations and information may not be obvious and I was still adding ideas as to what might be useful to calculate.
+  
+  So if we need to disuss things with her, I can do that on our Tuesday meeting

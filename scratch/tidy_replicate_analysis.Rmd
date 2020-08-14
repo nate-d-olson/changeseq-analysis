@@ -18,13 +18,14 @@ library(tidyverse); packageVersion("tidyverse")
 library(yaml); packageVersion("yaml")
 library(here); packageVersion("here")
 library(stringr); packageVersion("stringr")
+library(ggpubr); packageVersion("ggpubr")
+library(cowplot); packageVersion("cowplot")
 ```
 
 # Summary
 Rewriting Sierra's initial replicate analysis for evaluating within and between lab changeseq method performance.
 
 # Approach
-<!-- Brief description of individual analysis steps -->
 
 **Experimental Factors**
 N: NIST
@@ -35,6 +36,9 @@ S: St. Jude
 NNN         | NIST        | NIST               | NIST
 NSN         | NIST        | St. Jude           | NIST
 NSS         | NIST        | St. Jude           | St. Jude
+SSN         | St. Jude    | St. Jude           | NIST
+
+__NOTE__ SSN: refers to the CHANGE-Seq manuscript/publication samples. See below for pre-run steps
 
 *St Jude has not yet re-run our sequencing of the original A-F samples. (NNS)*
 
@@ -42,7 +46,48 @@ NSS         | NIST        | St. Jude           | St. Jude
 2. Annotating CHANGE-Seq data frame with sample pair/ replicate information
 3. Summary/ Statistical Analysis  
     1. Summary Table  
-    2. StJude - NIST Comparison
+    2. Interlaboratory Comparisons
+
+## Data Pre-Run Steps
+
+**Reference Genome**
+Cicera:
+> You can download hg38 sequence from: https://hgdownload.soe.ucsc.edu/goldenPath/hg38/chromosomes/ and concatenate only the main chromosome sequences as hg38_chroms_only.fa
+
+Downloaded all files with this naming scheme: "chrom1.fa.gz" + X & Y. 
+
+Concatenated files via:
+
+```{r, engine = 'bash', eval = FALSE}
+cd ~/Desktop/reference_genome
+cat *.fa > ~/Desktop/reference_genome/combined_hg38_chroms.fa
+```
+
+**Trimmed NIST-sequenced files due to extra cycling with our kit via:**
+
+```{r, engine = 'bash', eval = FALSE}
+seqtk trimfq -e 150 \
+A_S1_L001_R1_001.fastq.gz > A_S1_L001_R1_001_trimmed.fq
+```
+
+
+**SSN files:** 
+Cicera:
+> Those samples were sequenced on a MiSeq V3 kit. For comparison of replicates, you will need to sample the gz files to the same sequence depth (between the replicates), and ideally, once you get the results, you would merge the tables and set a cutoff (read counts), because the low frequency sites are very likely to occur in one replicate but not in other. That's what we use for the comparisons in figure 1. (edited) 
+
+>you can use this command to check how many reads in each file:
+
+```{r, engine = 'bash', eval = FALSE}
+parallel "echo {} && gunzip -c {} | wc -l | awk '{d=\$1; print d/4;}'" ::: *.gz
+```
+
+>Then, you can use this one to generate new files with the number of reads that you want:
+
+```{r, engine = 'bash', eval = FALSE}
+seqtk sample -s100 read1.fq 1000 > sub1.fq
+```
+
+where 1000 is the number you want to sample.
 
 # Analysis
 ## Loading and Munging data (1 and 2 above)
@@ -140,11 +185,11 @@ summary_df <- changeseq_anno_df %>%
            ## assign off-target read counts in non-on-target rows
             off_target = if_else(on_target == 0, Nuclease_Read_Count, 0),
             ## seqs with subs only = seq in Site_Sequence col only
-            Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
+            Sub_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
             ## seqs with indels only = seq in Site_Sequence_Gaps_Allowed col only
             Indel_Only = if_else(is.na(Site_Sequence_Gaps_Allowed), TRUE, FALSE),
             ## seqs with two possible reps = seq in both cols
-            Sub_or_Indel = if_else(is.na(Substitution_Only || Indel_Only), FALSE, TRUE))
+            Sub_or_Indel = if_else(is.na(Sub_Only || Indel_Only), FALSE, TRUE))
 ```
   
 * Number of sequences with substitutions only
@@ -161,7 +206,7 @@ off_target_ratio <- summary_df %>%
 ## create df to plot alignment of off-target seq resolution details
 off_target_seq_align_df <- summary_df%>%    
     group_by(changeseq_run, lab, target_site) %>%
-    summarise(total_substitution_only_seqs = sum(Substitution_Only),
+    summarise(total_substitution_only_seqs = sum(Sub_Only),
               total_indels_only = sum(Indel_Only),
               total_sub_or_indel = sum(Sub_or_Indel))
 ```
@@ -225,14 +270,14 @@ on_top_off_df
 * Read count for seqs w/ 6 substitutions from target sequence
 ```{r}
 ## create df to plot the binned read counts of off-target substitution numbers
-substitution_count_df <- summary_df %>%
+substitution_readcount_df <- summary_df %>%
     mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE)) %>% 
     filter(Substitution_Only == TRUE,
            Site_Substitution_Number > 0) %>% 
     group_by(changeseq_run, lab, target_site, Site_Substitution_Number) %>% 
     summarise(substitution_read_count = sum(Nuclease_Read_Count))
 
-substitution_count_df      
+substitution_readcount_df      
 ```
 
 
@@ -304,7 +349,7 @@ ggplot(off_target_ratio) +
 The rates of the off-target sequences are generally all higher than that of the on-target rates. Like the on-target rates, samples A, E, and F are similar in value. Samples B, C, and D have variance with the inverse of the above - the off-target rates are higher for the St. Jude-sequenced samples than that of the NIST-sequenced samples. 
 
 
-* Paneled bar plot showing off-target sequence alignment details
+* Paneled bar plot showing off-target sequence alignment details: number of sequences that fit into 3 categories
 ```{r}
 off_target_seq_align_df %>% 
     ## First make the table long
@@ -327,13 +372,14 @@ The off-target sequences are aligned to the target sequence. These are binned in
 * Bar plot of top 25% off-target read counts
 ```{r}
 ggplot(top_quarter_off_target_df) + 
-    geom_bar(aes(x = target_site, y = total_read_count, fill = lab), 
+    geom_bar(aes(x = target_site, y = top_quarter_offtarget_readcount, fill = lab), 
              position = "dodge", stat = "identity") +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
     labs(x = "Total Read Count of Top 25% Off-Targets", y = "Editing Target Site", 
          fill = "Lab")
 ```
+
 * Scatter plot showing the ratio of on-target read counts to the off-target sequence with the highest read count
 ``````{r}
 ggplot(on_top_off_df) + 
@@ -346,15 +392,27 @@ ggplot(on_top_off_df) +
 ```
 As seen with the on-target rate considering total read counts, NIST has higher rates than St. Jude-sequenced samples. 
 
-* Plot of read counts per substitution number for each sample
+* Scatter plot of read counts per substitution number for each sample
 ```{r}
-substitution_count_df %>% 
+substitution_readcount_df %>% 
   ggplot() + 
   geom_point(aes(x = Site_Substitution_Number, y = substitution_read_count, fill = lab), 
              shape = 21, alpha = 0.25) + 
   facet_wrap(~target_site, scales = "free_y") + 
   theme_bw()
 ```
+*Bar plot of read counts per subsitution number for each sample
+```{r}
+ggplot(substitution_count_df) + 
+    geom_bar(aes(x = Site_Substitution_Number, y = substitution_read_count, fill = lab), 
+             position = "dodge", stat = "identity") +
+    theme_bw() + 
+    theme(axis.text.x = element_text(angle = 90)) + 
+    labs(x = "Substitution Number", y = "Read Count", 
+         fill = "Lab")
+```
+
+
 
 ####################################### EVERYTHING ABOVE TRANSFERRED TO FINAL DOC 2020-08-10
 
@@ -414,7 +472,7 @@ summary_table %>% DT::datatable()
 
 
 
-## Off-Target Sequence Comparison
+## Off-Target Genomic Coordinate Comparison Between Labs
 re-implementation of code from `CHANGEseq_compare_fulldf.R` and `edited_CHANGEseq_compare_fulldf.R`. 
 These scripts aim to reproduce manuscript Figure 1i. 
 
@@ -434,27 +492,119 @@ off_target_scatter_df <- off_target_df %>%
   
 ```
 
+## Venn Bar Plots
+
 ```{r}
-(nsn_v_nss <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 1) %>% 
-  ggplot() + geom_point(aes(x = NSN, y = NSS), alpha = 0.25) + 
+venn <- off_target_df %>%
+  select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>%
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = NA) %>%
+  mutate(NSN_NSS = if_else(is.na(NSN) | is.na(NSS), 0, 1),
+         NSN_NNN = if_else(is.na(NSN) | is.na(NNN), 0, 1),
+         NSS_NNN = if_else(is.na(NSS) | is.na(NNN), 0, 1)) %>%
+  group_by(lab, target_site) %>%
+  sumarise(NSN_NSS_overlap = sum(NSN_NSS),
+           NSN_NNN_overlap = sum(NSN_NNN),
+           NSS_NNN_overlap = sum(NSS_NNN))
+           
+           
+  
+  
+  
+
+## will finish when I have the above code worked out
+ggplot(data = venn)
+ 
+
+```
+
+
+
+
+
+
+
+
+
+
+### Read Count Replicate v Replicate Scatter Plots
+#### All Off-Target Coordinates
+__NOTE__ R squared values cannot be plotted/calculated because of the induction of zero values where coordinates are not shared between replicates
+
+NSN vs. NSS: all off-targets
+```{r}
+(nsn_v_nss_all <- off_target_scatter_df %>% 
+   ## values_fill make empty entries value of 0
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+  ggplot() + geom_point(aes(x = NSN, y = NSS), 
+                        color = "darkblue", fill = "darkorange",
+                        shape = 21, alpha = 0.25) + 
   scale_x_log10() + 
   scale_y_log10() + 
   facet_wrap(~target_site, ncol = 1) + 
   theme_bw())
 ```
+
+NSN vs. NNN: all off-targets
 ```{r}
-(nsn_v_nnn <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 1) %>% 
-  ggplot() + geom_point(aes(x = NSN, y = NNN), 
+(nsn_v_nnn_all <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+  ggplot() + geom_point(aes(x = NSN, y = NSS), 
                         color = "darkblue", fill = "darkorange",
                         shape = 21, alpha = 0.25) + 
   scale_x_log10() + 
   scale_y_log10() + 
-  facet_wrap(~target_site) + 
+  facet_wrap(~target_site, ncol = 1) + 
   theme_bw())
 ```
 
+NSS vs. NNN: all off-targets
+```{r}
+(nss_v_nnn_all <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+  ggplot() + geom_point(aes(x = NSN, y = NSS), 
+                        color = "darkblue", fill = "darkorange",
+                        shape = 21, alpha = 0.25) + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw())
+```
+
+Paneled view of pairwise lab comparisons of all off-target genomic coordinates and their respective read counts.
+```{r fig.height= 6}
+ggpubr::ggarrange(nsn_v_nss_all, nsn_v_nnn_all, nss_v_nnn_all, ncol = 3)
+```
+
+#### Overlapping Off-Target Coordinates
+NSN vs. NSS: Concordant Off-Target Coordinates
+```{r}
+(nsn_v_nss <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+   filter(NSS != 0, NNN != 0) %>%
+  ggplot(aes(x = NSS, y = NNN)) + 
+   geom_point(alpha = 0.25) + 
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw())
+```
+
+NSN vs. NNN: Concordant Off-Target Coordinates
+```{r}
+(nsn_v_nnn <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+   filter(NSS != 0, NNN != 0) %>%
+  ggplot(aes(x = NSS, y = NNN)) + 
+   geom_point(alpha = 0.25) + 
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw())
+```
+
+NSS vs. NNN: Concordant Off-Target Coordinates
 ```{r}
 (nss_v_nnn <- off_target_scatter_df %>% 
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
@@ -467,9 +617,16 @@ off_target_scatter_df <- off_target_df %>%
   facet_wrap(~target_site, ncol = 1) + 
   theme_bw())
 ```
+
 ```{r fig.height= 6}
 ggpubr::ggarrange(nsn_v_nss, nsn_v_nnn, nss_v_nnn, ncol = 3)
 ```
+
+### Unique Read Count Occurrence Plots
+The read count values for the off-target coordinates unique to replicate 1, replicate 2, and the intersection of the replicates was extracted. Unique read count values from all 3 data were then used to tally each occurrence across the unique genomic coordinates for replicate 1, replicate 2. and the intersection of the replicates
+
+
+
 
 
 
