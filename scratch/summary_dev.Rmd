@@ -267,9 +267,7 @@ substitution_count_df <- summary_df %>%
 ```
 
 ### Summary Metric Analysis
-#### Plots
-
-* Bar Plot of Total Read Counts per Sample
+#### Total Read Counts per Sample
 ```{r}
 ggplot(total_count_df) + 
     geom_bar(aes(x = target_site, y = total_read_count, fill = lab), 
@@ -282,7 +280,8 @@ ggplot(total_count_df) +
 
 Sample F for NSS has a drastically lower total read count when compared to NNN and NSN. St. Jude's CHANGE-Seq manifest file was pointing to sample E's read fastq files for sample F. Regarding the sequencing at NIST vs. the sequencing at St. Jude, our sequencing runs have consistently lower total read counts. Potential sources of variability: Sequencing and Person running bioinformatics. 
 
-* Bar Plot of On-Target Read Counts per Sample
+#### On-Target Read Counts per Sample
+
 ```{r}
 ggplot(target_count_df) + 
     geom_bar(aes(x = target_site, y = on_target_count, fill = lab), 
@@ -292,9 +291,11 @@ ggplot(target_count_df) +
     labs(x = "Total On-Target Read Count", y = "Editing Target Site", 
          fill = "Lab")
 ```
+
 Consistent pattern (disregarding sample F from St. Jude's sequenced and bioinformatics) of similar values between my run and St. Jude's run of CHANGE-Seq on their sequenced samples and NIST with lower values for reads except for sample C and D where our on-target read count is just slightly more than that of St. Jude's sequenced samples.  
 
-*Scatter Plot of On-Target Read Count/Total Read Count
+#### On-Target Read Count/Total Read Count
+
 ``````{r}
 ggplot(on_off_target_df) + 
     geom_point(aes(x = target_site, y = on_target_rate, fill = lab), 
@@ -304,9 +305,10 @@ ggplot(on_off_target_df) +
         labs(x = "Editing Target Site", y = "On Target Rate", 
          fill = "Lab")
 ```
+
 On-target rates for sample A, E, and F are nearly matched and variance for samples B, C, and D is observed. NIST-sequenced samples are slightly higher.
 
-*Scatter Plot of Off-Target Read Count/Total Read Count
+#### Off-Target Read Count/Total Read Count
 ``````{r}
 ggplot(off_target_ratio) + 
     geom_point(aes(x = target_site, y = off_target_ratio, fill = lab), 
@@ -316,9 +318,10 @@ ggplot(off_target_ratio) +
         labs(x = "Editing Target Site", y = "Off Target Rate", 
          fill = "Lab")
 ```
+
 The rates of the off-target sequences are generally all higher than that of the on-target rates. Like the on-target rates, samples A, E, and F are similar in value. Samples B, C, and D have variance with the inverse of the above - the off-target rates are higher for the St. Jude-sequenced samples than that of the NIST-sequenced samples. 
 
-* Paneled bar plot showing off-target sequence alignment details
+##### Off-target sequence alignment 
 ```{r}
 off_target_seq_align_df %>% 
     ## First make the table long
@@ -335,9 +338,10 @@ off_target_seq_align_df %>%
     theme_bw() +
     theme(axis.text.x = element_text(angle = -45, hjust = 0))
 ```
+
 The off-target sequences are aligned to the target sequence. These are binned in the following manner: in order to align properly to the target sequence, the off-target sequence could be resolve with substitutions (and assigned a substitution number), gaps (insertions or deletions) or by both possibilities. Here, I have binned them accordingly. As before, no major differences are observed between the samples sequenced at St. Jude but run through the CHANGE-Seq bioinformatics pipeline by me and St. Jude, however, variance is observed between the samples sequenced at NIST vs. St. Jude. For samples A and B, NIST-sequenced off-target reads are overall in lower numbers as compared to St. Jude.
 
-* Bar plot of top 25% off-target read counts
+#### top 25% off-target read counts
 ```{r}
 ggplot(top_quarter_off_target_df) + 
     geom_bar(aes(x = target_site, y = top_quarter_offtarget_readcount, fill = lab), 
