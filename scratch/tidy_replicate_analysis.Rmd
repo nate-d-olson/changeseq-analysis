@@ -364,7 +364,8 @@ off_target_seq_align_df %>%
     ## Split plot by summary metric
     facet_wrap(~target_site, scales = "free_y") +
     theme_bw() +
-    theme(axis.text.x = element_text(angle = -45, hjust = 0))
+    theme(axis.text.x = element_text(angle = -45, hjust = 0)) +
+  labs(x = "Mismatch Type", y = "Read Count", fill = "Lab")
 ```
 The off-target sequences are aligned to the target sequence. These are binned in the following manner: in order to align properly to the target sequence, the off-target sequence could be resolve with substitutions (and assigned a substitution number), gaps (insertions or deletions) or by both possibilities. Here, I have binned them accordingly. As before, no differences are observed between the samples sequenced at St. Jude but run through the CHANGE-Seq bioinformatics pipeline by me and St. Jude, however, variance is observed between the samples sequenced at NIST vs. St. Jude. For samples A and B, NIST-sequenced off-target reads are overall in lower numbers as compared to St. Jude.
 
@@ -396,16 +397,20 @@ As seen with the on-target rate considering total read counts, NIST has higher r
 ```{r}
 substitution_readcount_df %>% 
   ggplot() + 
-  geom_point(aes(x = Site_Substitution_Number, y = substitution_read_count, fill = lab), 
+  geom_point(aes(x = Site_Substitution_Number, 
+                 y = substitution_read_count, 
+                 fill = lab), 
              shape = 21, alpha = 0.25) + 
   facet_wrap(~target_site, scales = "free_y") + 
   theme_bw()
 ```
 *Bar plot of read counts per subsitution number for each sample
 ```{r}
-ggplot(substitution_count_df) + 
-    geom_bar(aes(x = Site_Substitution_Number, y = substitution_read_count, fill = lab), 
+ggplot(substitution_readcount_df) + 
+    geom_bar(aes(x = Site_Substitution_Number, 
+                 y = substitution_read_count, fill = lab), 
              position = "dodge", stat = "identity") +
+  facet_wrap(~target_site) + 
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
     labs(x = "Substitution Number", y = "Read Count", 
@@ -494,27 +499,29 @@ off_target_scatter_df <- off_target_df %>%
 
 ## Venn Bar Plots
 
+
 ```{r}
-venn <- off_target_df %>%
+
+
+
+#%>%
+  # pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = NA)
+```
+
+```{r}
+off_target_lab_set <- off_target_df %>%
+  select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
+  group_by(`Genomic Coordinate`, target_site) %>% 
+  summarise(lab_set = str_c(sort(lab), collapse = "-"))
+
+venn_df <- off_target_df %>%
   select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>%
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = NA) %>%
-  mutate(NSN_NSS = if_else(is.na(NSN) | is.na(NSS), 0, 1),
-         NSN_NNN = if_else(is.na(NSN) | is.na(NNN), 0, 1),
-         NSS_NNN = if_else(is.na(NSS) | is.na(NNN), 0, 1)) %>%
-  group_by(lab, target_site) %>%
-  sumarise(NSN_NSS_overlap = sum(NSN_NSS),
-           NSN_NNN_overlap = sum(NSN_NNN),
-           NSS_NNN_overlap = sum(NSS_NNN))
-           
-           
-  
-  
-  
+  left_join(off_target_lab_set)
 
-## will finish when I have the above code worked out
-ggplot(data = venn)
- 
-
+ggplot(data = venn_df) + 
+  geom_bar(aes(x = target_site, fill = lab_set), position = "fill") + 
+  coord_flip()
 ```
 
 
@@ -548,7 +555,7 @@ NSN vs. NNN: all off-targets
 ```{r}
 (nsn_v_nnn_all <- off_target_scatter_df %>% 
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-  ggplot() + geom_point(aes(x = NSN, y = NSS), 
+  ggplot() + geom_point(aes(x = NSN, y = NNN), 
                         color = "darkblue", fill = "darkorange",
                         shape = 21, alpha = 0.25) + 
   scale_x_log10() + 
@@ -561,7 +568,7 @@ NSS vs. NNN: all off-targets
 ```{r}
 (nss_v_nnn_all <- off_target_scatter_df %>% 
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-  ggplot() + geom_point(aes(x = NSN, y = NSS), 
+  ggplot() + geom_point(aes(x = NSS, y = NNN), 
                         color = "darkblue", fill = "darkorange",
                         shape = 21, alpha = 0.25) + 
   scale_x_log10() + 
