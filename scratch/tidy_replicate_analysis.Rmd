@@ -350,6 +350,17 @@ The rates of the off-target sequences are generally all higher than that of the 
 
 
 * Paneled bar plot showing off-target sequence alignment details: number of sequences that fit into 3 categories
+
+```{r}
+off_target_seq_align_df
+```
+
+```{r}
+off_target_seq_align_df %>% 
+    ## First make the table long
+    gather(key = "metric", value = "value", -changeseq_run, -lab, -target_site)
+```
+
 ```{r}
 off_target_seq_align_df %>% 
     ## First make the table long
@@ -365,7 +376,7 @@ off_target_seq_align_df %>%
     facet_wrap(~target_site, scales = "free_y") +
     theme_bw() +
     theme(axis.text.x = element_text(angle = -45, hjust = 0)) +
-  labs(x = "Mismatch Type", y = "Read Count", fill = "Lab")
+  labs(x = "Mismatch Type", y = "Number of Sequences", fill = "Lab")
 ```
 The off-target sequences are aligned to the target sequence. These are binned in the following manner: in order to align properly to the target sequence, the off-target sequence could be resolve with substitutions (and assigned a substitution number), gaps (insertions or deletions) or by both possibilities. Here, I have binned them accordingly. As before, no differences are observed between the samples sequenced at St. Jude but run through the CHANGE-Seq bioinformatics pipeline by me and St. Jude, however, variance is observed between the samples sequenced at NIST vs. St. Jude. For samples A and B, NIST-sequenced off-target reads are overall in lower numbers as compared to St. Jude.
 
@@ -405,15 +416,28 @@ substitution_readcount_df %>%
   theme_bw()
 ```
 *Bar plot of read counts per subsitution number for each sample
+
+
 ```{r}
-ggplot(substitution_readcount_df) + 
-    geom_bar(aes(x = Site_Substitution_Number, 
-                 y = substitution_read_count, fill = lab), 
+indel_df <- off_target_seq_align_df %>% 
+  select(-total_substitution_only_seqs) %>% 
+  pivot_longer(names_to = "diff_cat", values_to = "read_count", 
+               cols = c("total_indels_only","total_sub_or_indel"))
+
+diff_cat_read_count_df <- substitution_readcount_df %>% 
+  mutate(diff_cat = str_c("Substitution #", Site_Substitution_Number, sep = "")) %>% 
+  select(-Site_Substitution_Number) %>% 
+  rename(read_count = substitution_read_count) %>% 
+  bind_rows(indel_df)
+
+ggplot(diff_cat_read_count_df) + 
+    geom_bar(aes(x = diff_cat, 
+                 y = read_count, fill = lab), 
              position = "dodge", stat = "identity") +
   facet_wrap(~target_site) + 
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
-    labs(x = "Substitution Number", y = "Read Count", 
+    labs(x = "Difference Type", y = "Read Count", 
          fill = "Lab")
 ```
 
@@ -430,7 +454,7 @@ __NOTE__ Might want to rename columns for consistency, e.g. total_substitution_o
 
 ```{r}
 ## Making substitution count data frame wide for join
-sub_counts_wide_df <- substitution_count_df %>% 
+sub_counts_wide_df <- substitution_readcount_df %>% 
   mutate(Site_Substitution_Number = paste("sub",Site_Substitution_Number, "count", 
                                           sep = "_")) %>%
   pivot_wider(names_from = Site_Substitution_Number, 
