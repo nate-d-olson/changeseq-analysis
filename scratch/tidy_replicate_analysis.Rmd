@@ -525,14 +525,6 @@ off_target_scatter_df <- off_target_df %>%
 
 
 ```{r}
-
-
-
-#%>%
-  # pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = NA)
-```
-
-```{r}
 off_target_lab_set <- off_target_df %>%
   select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
   group_by(`Genomic Coordinate`, target_site) %>% 
@@ -545,7 +537,11 @@ venn_df <- off_target_df %>%
 
 ggplot(data = venn_df) + 
   geom_bar(aes(x = target_site, fill = lab_set), position = "fill") + 
-  coord_flip()
+  coord_flip() + 
+  theme_bw() + 
+  labs(x = "Target Site", 
+       y = "Proportion of Coordinates", 
+       fill = "Lab Combinations")
 ```
 
 
@@ -558,86 +554,36 @@ ggplot(data = venn_df) +
 
 
 ### Read Count Replicate v Replicate Scatter Plots
-#### All Off-Target Coordinates
-__NOTE__ R squared values cannot be plotted/calculated because of the induction of zero values where coordinates are not shared between replicates
-
-NSN vs. NSS: all off-targets
-```{r}
-(nsn_v_nss_all <- off_target_scatter_df %>% 
-   ## values_fill make empty entries value of 0
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-  ggplot() + geom_point(aes(x = NSN, y = NSS), 
-                        color = "darkblue", fill = "darkorange",
-                        shape = 21, alpha = 0.25) + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  facet_wrap(~target_site, ncol = 1) + 
-  theme_bw())
-```
-
-NSN vs. NNN: all off-targets
-```{r}
-(nsn_v_nnn_all <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-  ggplot() + geom_point(aes(x = NSN, y = NNN), 
-                        color = "darkblue", fill = "darkorange",
-                        shape = 21, alpha = 0.25) + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  facet_wrap(~target_site, ncol = 1) + 
-  theme_bw())
-```
-
-NSS vs. NNN: all off-targets
-```{r}
-(nss_v_nnn_all <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-  ggplot() + geom_point(aes(x = NSS, y = NNN), 
-                        color = "darkblue", fill = "darkorange",
-                        shape = 21, alpha = 0.25) + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  facet_wrap(~target_site, ncol = 1) + 
-  theme_bw())
-```
-
-Paneled view of pairwise lab comparisons of all off-target genomic coordinates and their respective read counts.
-```{r fig.height= 6}
-ggpubr::ggarrange(nsn_v_nss_all, nsn_v_nnn_all, nss_v_nnn_all, ncol = 3)
-```
 
 #### Overlapping Off-Target Coordinates
-NSN vs. NSS: Concordant Off-Target Coordinates
-```{r}
-(nsn_v_nss <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NSS != 0, NNN != 0) %>%
-  ggplot(aes(x = NSS, y = NNN)) + 
-   geom_point(alpha = 0.25) + 
-   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  facet_wrap(~target_site, ncol = 1) + 
-  theme_bw())
-```
 
-NSN vs. NNN: Concordant Off-Target Coordinates
 ```{r}
-(nsn_v_nnn <- off_target_scatter_df %>% 
+## NSN vs. NSS: Concordant Off-Target Coordinates
+nsn_v_nss <- off_target_scatter_df %>% 
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NSS != 0, NNN != 0) %>%
-  ggplot(aes(x = NSS, y = NNN)) + 
+   filter(NSS != 0, NSN != 0) %>%
+  ggplot(aes(x = NSN, y = NSS)) + 
    geom_point(alpha = 0.25) + 
    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
   scale_x_log10() + 
   scale_y_log10() + 
   facet_wrap(~target_site, ncol = 1) + 
-  theme_bw())
-```
+  theme_bw()
 
-NSS vs. NNN: Concordant Off-Target Coordinates
-```{r}
-(nss_v_nnn <- off_target_scatter_df %>% 
+## NSN vs. NNN: Concordant Off-Target Coordinates
+nsn_v_nnn <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+   filter(NSN != 0, NNN != 0) %>%
+  ggplot(aes(x = NSN, y = NNN)) + 
+   geom_point(alpha = 0.25) + 
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw()
+
+## NSS vs. NNN: Concordant Off-Target Coordinates
+nss_v_nnn <- off_target_scatter_df %>% 
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
    filter(NSS != 0, NNN != 0) %>%
   ggplot(aes(x = NSS, y = NNN)) + 
@@ -646,7 +592,7 @@ NSS vs. NNN: Concordant Off-Target Coordinates
   scale_x_log10() + 
   scale_y_log10() + 
   facet_wrap(~target_site, ncol = 1) + 
-  theme_bw())
+  theme_bw()
 ```
 
 ```{r fig.height= 6}
@@ -656,8 +602,59 @@ ggpubr::ggarrange(nsn_v_nss, nsn_v_nnn, nss_v_nnn, ncol = 3)
 ### Unique Read Count Occurrence Plots
 The read count values for the off-target coordinates unique to replicate 1, replicate 2, and the intersection of the replicates was extracted. Unique read count values from all 3 data were then used to tally each occurrence across the unique genomic coordinates for replicate 1, replicate 2. and the intersection of the replicates
 
+```{r fig.height = 4}
+nnn_nsn_lab_set <- off_target_df %>%
+  select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
+  group_by(`Genomic Coordinate`, target_site) %>% 
+  filter(lab != "NSS") %>% 
+  summarise(lab_set = str_c(sort(lab), collapse = "-"))
+
+rep_count_scatter_df <- off_target_df %>%
+  select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
+  filter(lab != "NSS") %>% 
+  right_join(nnn_nsn_lab_set) %>% 
+  count(target_site, lab_set, Nuclease_Read_Count, name = "Occurence")
+  
+ggplot(rep_count_scatter_df) + 
+  geom_point(aes(x = Nuclease_Read_Count, y = Occurence, fill = lab_set), shape = 21) + 
+  scale_x_log10() + 
+  facet_wrap(~target_site, scales = "free_y", ncol = 1) +
+  theme_bw()
+```
+
+```{r}
+nnn_nsn_lab_set <- off_target_df %>%
+  select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
+  group_by(`Genomic Coordinate`, target_site) %>% 
+  filter(lab != "NSS") %>% 
+  summarise(lab_set = str_c(sort(lab), collapse = "-"))
+
+rep_count_scatter_df <- off_target_df %>%
+  select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
+  filter(lab != "NSS") %>% 
+  right_join(nnn_nsn_lab_set)
+
+ggplot(rep_count_scatter_df) + 
+  geom_histogram(aes(x = Nuclease_Read_Count, fill = lab_set)) + 
+  scale_x_log10() + 
+  facet_wrap(~target_site, scales = "free_y", ncol = 1) +
+  theme_bw()
+
+```
 
 
+```{r}
+rep_count_scatter_df %>% 
+  mutate(lab_set = factor(lab_set, level = c("NNN-NSN", "NNN","NSN"))) %>% 
+ggplot() + 
+  geom_histogram(aes(x = Nuclease_Read_Count, fill = lab_set), position = "fill") + 
+  scale_x_log10() + 
+  facet_wrap(~target_site, scales = "free_y", ncol = 1) +
+  theme_bw() +
+  scale_fill_brewer(type = "qual", palette = 2) +
+  labs(x = "Read Count", y = "Proportion of Sites")
+
+```
 
 
 
