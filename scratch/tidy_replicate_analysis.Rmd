@@ -9,9 +9,6 @@ output:
         code_folding: hide
 ---
 
-# Questions for rewrite analysis
-1. Input data files, specifically list of `identified_matched.txt` files and replicate information.
-
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse); packageVersion("tidyverse")
@@ -92,7 +89,7 @@ where 1000 is the number you want to sample.
 # Analysis
 ## Loading and Munging data (1 and 2 above)
 
-Loading changeseq output tsv files into a single data frame
+Loading CHANGE-Seq output txt files into a single data frame
 ```{r message = FALSE}
 ## Using message = FALSE to avoid printing read_tsv message about column specifications
 
@@ -125,8 +122,10 @@ changeseq_anno_df <- changeseq_df %>%
           target_site = str_sub(changeseq_run, 5),
           ## further edit target site col if contains the St Jude file prefixes of CRLXXXX
            target_site = str_remove(target_site,  "CRL[:digit:]*_"),
+            target_site = str_remove(target_site, "_sampled_"),
           ## lab col will contain the first 3 letter acronyms
-           lab = substr(changeseq_run, 1,3)) %>% 
+          lab = substr(changeseq_run, 1,4),
+             lab = str_remove(lab, "_")) %>%
      ## possible identifiers: NNN, NSN, NSS
      ## first = wet lab, second = sequence, third = bioinformatics
     ## take the 3 letters in lab col and split into 3 additional cols 
@@ -146,7 +145,7 @@ __NOTE__ - The lab, target_site, and/ or changeseq_run variables can be used as 
 ## Summary/ Statistical Analysis
 ### Calculating Summary Metrics
 
-* Total Read Counts per Sample 
+**Total Read Counts per Sample**
 ```{r}
 total_count_df <- changeseq_anno_df %>% 
     group_by(changeseq_run, lab, target_site) %>% 
@@ -155,7 +154,7 @@ total_count_df <- changeseq_anno_df %>%
 total_count_df
 ```
 
-* Total on-target read count
+**Total on-target read count**
 ```{r}
 target_count_df <- changeseq_anno_df %>% 
     filter(Site_Substitution_Number == 0) %>% 
@@ -166,7 +165,7 @@ target_count_df
 ```
 
 
-* Percent on-target read count (on-target read count/total read count)
+**Percent on-target read count (on-target read count/total read count)**
 ```{r}
 on_off_target_df <- left_join(total_count_df, target_count_df) %>% 
     mutate(on_target_rate = on_target_count/total_read_count)
@@ -174,8 +173,8 @@ on_off_target_df <- left_join(total_count_df, target_count_df) %>%
 on_off_target_df
 ```
 
-* Total off-target read count
-* Percent off-target read count (off-target read count/total read count)
+**Total off-target read count**
+**Percent off-target read count (off-target read count/total read count)**
 ```{r}
 summary_df <- changeseq_anno_df %>% 
     ## replace NAs in Site_Substitution_Number col
@@ -192,9 +191,9 @@ summary_df <- changeseq_anno_df %>%
             Sub_or_Indel = if_else(is.na(Sub_Only || Indel_Only), FALSE, TRUE))
 ```
   
-* Number of sequences with substitutions only
-* Number sequences with indels only 
-* Number of sequences with two possible representations (substitutions or indels)
+**Number of sequences with substitutions only**
+**Number sequences with indels only**
+**Number of sequences with two possible representations (substitutions or indels)**
 ```{r}
 ## create df to plot off-target ratio
 off_target_ratio <- summary_df %>%  
@@ -220,8 +219,8 @@ off_target_seq_align_df
 ```
 
 
-CONSIDERING SEQUENCES THAT HAVE SUBSTITUTIONS ONLY...
-* On-target to top 25% reads (on-target read count/top 25% off-target read count)
+__NOTE__ CONSIDERING SEQUENCES THAT HAVE SUBSTITUTIONS ONLY...
+**On-target to top 25% reads (on-target read count/top 25% off-target read count)**
 ```{r}
 ## create df of all off-target rows sorted by decreasing read count value
 off_target_df <- summary_df %>%
@@ -247,7 +246,7 @@ top_quarter_off_target_df
 ```
 
 
-* On-target to most prevalent off-target read (on-target read count/off-target read with largest read count)
+**On-target to most prevalent off-target read (on-target read count/off-target read with largest read count)**
 ```{r}
 ## create df to plot ratio between on-target read count and most prevalent off-target read count per sample
 on_top_off_df <- summary_df %>% 
@@ -262,12 +261,12 @@ on_top_off_df <- summary_df %>%
 on_top_off_df
 ```
 
-* Read count for seqs w/ 1 substitution from target sequence
-* Read count for seqs w/ 2 substitutions from target sequence
-* Read count for seqs w/ 3 substitutions from target sequence
-* Read count for seqs w/ 4 substitutions from target sequence
-* Read count for seqs w/ 5 substitutions from target sequence
-* Read count for seqs w/ 6 substitutions from target sequence
+**Read count for seqs w/ 1 substitution from target sequence**
+**Read count for seqs w/ 2 substitutions from target sequence**
+**Read count for seqs w/ 3 substitutions from target sequence**
+**Read count for seqs w/ 4 substitutions from target sequence**
+**Read count for seqs w/ 5 substitutions from target sequence**
+**Read count for seqs w/ 6 substitutions from target sequence**
 ```{r}
 ## create df to plot the binned read counts of off-target substitution numbers
 substitution_readcount_df <- summary_df %>%
@@ -284,14 +283,14 @@ substitution_readcount_df
 ### Summary Metric Analysis
 #### Plots
 
-* Bar Plot of Total Read Counts per Sample
+**Bar Plot of Total Read Counts per Sample**
 ```{r}
 ggplot(total_count_df) + 
     geom_bar(aes(x = target_site, y = total_read_count, fill = lab), 
              position = "dodge", stat = "identity") +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
-    labs(x = "Total Read Count", y = "Editing Target Site", 
+    labs(x = "Editing Target Site", y = "Total Read Count", 
          fill = "Lab")
 ```
 
@@ -318,7 +317,7 @@ ggplot(target_count_df) +
              position = "dodge", stat = "identity") +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
-    labs(x = "Total On-Target Read Count", y = "Editing Target Site", 
+    labs(x = "Editing Target Site", y = "Total On-Target Read Count", 
          fill = "Lab")
 ```
 Consistent pattern (disregarding sample F from St. Jude's sequenced and bioinformatics) of identical values between my run and St. Jude's run of CHANGE-Seq on their sequenced samples and NIST with lower values for reads except for sample C and D where our on-target read count is just slightly more than that of St. Jude's sequenced samples.  
