@@ -1,0 +1,33 @@
+Cycle Status,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Extracted,618,Called,618,Scored,618,Error Rated,617,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Run Summary,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Level,Yield Total (G),Projected Total Yield (G),Aligned (%),Error Rate (%),Intensity Cycle 1,% >= Q30,,,,,,,,,,,
+Read 1,5.59,5.59,12.31,1.78,284,75.38,,,,,,,,,,,
+Read 2,0.13,0.13,0,NaN,648,85.14,,,,,,,,,,,
+Read 3,0.13,0.13,0,NaN,424,93.93,,,,,,,,,,,
+Read 4,5.59,5.59,12.15,1.88,227,67.4,,,,,,,,,,,
+Non-Indexed Total,11.18,11.18,12.23,1.83,255,71.39,,,,,,,,,,,
+Total,11.44,11.44,12.23,1.83,395,71.8,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Read 1,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Lane,Tiles,Density (K/mm2),Clusters PF (%),Legacy Phasing/Prephasing rate ,Phasing slope/offset ,Prephasing slope/offset ,Cluster Count Raw (M),Cluster Count PF (M),% >= Q30,Yield(G),Cycles Err Rated,Aligned (%),Error Rate (%),Error Rate 35 cycle (%),Error Rate 75 cycle (%),Error Rate 100 cycle (%),Intensity Cycle 1
+1,38,826 ± 41,92.47 ± 0.59,0.001 / 0.004,NaN / NaN,NaN / NaN,20.16,18.63,75.38,5.59,300,12.31 ± 0.65,1.78 ± 0.04,0.13 ± 0.02,0.19 ± 0.01,0.24 ± 0.01,284 ± 21
+,,,,,,,,,,,,,,,,,
+Read 2,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Lane,Tiles,Density (K/mm2),Clusters PF (%),Legacy Phasing/Prephasing rate ,Phasing slope/offset ,Prephasing slope/offset ,Cluster Count Raw (M),Cluster Count PF (M),% >= Q30,Yield(G),Cycles Err Rated,Aligned (%),Error Rate (%),Error Rate 35 cycle (%),Error Rate 75 cycle (%),Error Rate 100 cycle (%),Intensity Cycle 1
+1,38,826 ± 41,92.47 ± 0.59,0.000 / 0.000,NaN / NaN,NaN / NaN,20.16,18.63,85.14,0.13,0,NaN ± NaN,NaN ± NaN,NaN ± NaN,NaN ± NaN,NaN ± NaN,648 ± 50
+,,,,,,,,,,,,,,,,,
+Read 3,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Lane,Tiles,Density (K/mm2),Clusters PF (%),Legacy Phasing/Prephasing rate ,Phasing slope/offset ,Prephasing slope/offset ,Cluster Count Raw (M),Cluster Count PF (M),% >= Q30,Yield(G),Cycles Err Rated,Aligned (%),Error Rate (%),Error Rate 35 cycle (%),Error Rate 75 cycle (%),Error Rate 100 cycle (%),Intensity Cycle 1
+1,38,826 ± 41,92.47 ± 0.59,0.000 / 0.000,NaN / NaN,NaN / NaN,20.16,18.63,93.93,0.13,0,NaN ± NaN,NaN ± NaN,NaN ± NaN,NaN ± NaN,NaN ± NaN,424 ± 23
+,,,,,,,,,,,,,,,,,
+Read 4,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Lane,Tiles,Density (K/mm2),Clusters PF (%),Legacy Phasing/Prephasing rate ,Phasing slope/offset ,Prephasing slope/offset ,Cluster Count Raw (M),Cluster Count PF (M),% >= Q30,Yield(G),Cycles Err Rated,Aligned (%),Error Rate (%),Error Rate 35 cycle (%),Error Rate 75 cycle (%),Error Rate 100 cycle (%),Intensity Cycle 1
+1,38,826 ± 41,92.47 ± 0.59,0.095 / 0.055,NaN / NaN,NaN / NaN,20.16,18.63,67.4,5.59,300,12.15 ± 0.64,1.88 ± 0.06,0.14 ± 0.01,0.23 ± 0.02,0.28 ± 0.02,227 ± 14
