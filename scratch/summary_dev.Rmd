@@ -137,6 +137,22 @@ NN2_seq_info %>% DT::datatable()
 ## Coding 
 ### Loading and Munging data 
 
+
+```{r}
+## CREATE METADATA DF
+## Using message = FALSE to avoid printing read_tsv message about column specifications
+file_list <- as.list(list.files(path = here("data-raw"), 
+                           pattern = "identified_matched.txt",
+                           include.dirs = TRUE, full.names = TRUE, 
+                           recursive = TRUE) %>% 
+    str_remove(., paste0(here("data-raw"),"/")))
+
+## make that into a data frame
+changeseq_metadata_df <- tibble(file_path = unlist(file_list)) %>% 
+  separate(file_path, c("lab","changesq_run"), 
+           sep = "/", remove = FALSE) 
+```
+
 Locate files, set up metadata df
 ```{r message = FALSE}
 ## CREATE METADATA DF
@@ -145,16 +161,13 @@ file_list <- as.list(list.files(path = here("data-raw"),
                            pattern = "identified_matched.txt",
                            include.dirs = TRUE, full.names = TRUE, 
                            recursive = TRUE) %>% 
-    str_remove(., here("data-raw")))
+    str_remove(., paste0(here("data-raw"),"/")))
 
 ## make that into a data frame
-changeseq_metadata_df <- do.call(rbind.data.frame, file_list)
-## add col names
-colnames(changeseq_metadata_df) <- "file_path" 
+changeseq_metadata_df <- tibble(file_path = unlist(file_list)) %>% 
+  separate(file_path, c("lab","changeseq_run"), 
+           sep = "/", remove = FALSE) 
 
-changeseq_metadata_df <- changeseq_metadata_df %>% 
-  mutate( lab = substr(file_path, 2, 5), 
-          changeseq_run = (str_split(file_path, "/")[[1]][3]))
 
 ## READ IN FILES - CREATE 1 DF
 changeseq_lst <- list.files(path = here("data-raw"), 
@@ -169,7 +182,8 @@ changeseq_df <-changeseq_lst %>%
           target_site = str_sub(changeseq_run, 5),
           ## further edit target site col if contains the St Jude file prefixes of CRLXXXX
            target_site = str_remove(target_site,  "CRL[:digit:]*_"),
-            target_site = str_remove(target_site, "_sampled_"))
+            target_site = str_remove(target_site, "_sampled_"),
+          target_site = str_remove(target_site, "_identified_matched.txt"))
 
 ## Annotating with sample metadata
 changeseq_anno_df <- left_join(changeseq_metadata_df, changeseq_df)
@@ -343,8 +357,9 @@ ggplot(total_count_df) +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
     labs(x = "Editing Target Site", y = "Total Read Count", 
-         fill = "Lab") 
-
+         fill = "Lab")
+```
+```{r}
 ggplot(target_count_df) + 
     geom_bar(aes(x = target_site, y = on_target_count, fill = lab), 
              position = "dodge", stat = "identity") +
