@@ -486,8 +486,8 @@ diff_cat_read_count_df <- substitution_readcount_df %>%
   rename(read_count = substitution_read_count) %>% 
   bind_rows(indel_df)
 
-ggplot(diff_cat_read_count_df) + 
-    geom_bar(aes(x = diff_cat, 
+ggplot(diff_cat_read_count_df) +
+    geom_bar(aes(x = diff_cat,
                  fill = lab), 
              position = "dodge") +
   facet_wrap(~target_site) + 
@@ -495,6 +495,16 @@ ggplot(diff_cat_read_count_df) +
     theme(axis.text.x = element_text(angle = 90)) + 
     labs(x = "Difference Type",
          fill = "Lab")
+```
+```{r}
+changeseq_anno_df %>% 
+  filter(!is.na(Site_Substitution_Number)) %>% 
+  mutate(target_site = str_remove(target_site, "_GM24385_ident.*")) %>% 
+  ggplot() + 
+  geom_bar(aes(x = Site_Substitution_Number, fill = lab),
+           position = "dodge") + 
+  facet_wrap(~target_site) + 
+  theme_bw()
 ```
 
 
@@ -505,24 +515,31 @@ As opposed to the typical venn diagrams, these show relative abundance and give 
 __NOTE__ NATE - can we add the values on the graph??
 
 ```{r}
+off_target_lab_set
+```
+
+```{r}
 off_target_scatter_df <- off_target_df %>% 
   select(Chromosome, Start, End, Nuclease_Read_Count, target_site, lab) %>%
-  filter(!lab == "NSS")
+  filter(!lab == "NSS1")
 
 off_target_lab_set <- off_target_df %>%
   select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
-  filter(!lab == "NSS") %>%
+  filter(!lab == "NSS1") %>%
   group_by(`Genomic Coordinate`, target_site) %>% 
-  summarise(lab_set = str_c(sort(lab), collapse = "-"))
+  summarise(lab_set = str_c(sort(unique(lab)), collapse = "-"))
 
 venn_df <- off_target_df %>%
   select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>%
-  filter(!lab == "NSS") %>%
+  filter(!lab == "NSS1") %>%
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = NA) %>%
   left_join(off_target_lab_set)
 
 ggplot(data = venn_df) + 
-  geom_bar(aes(x = target_site, fill = lab_set), position = "fill") + 
+  geom_bar(aes(x = target_site, fill = lab_set), 
+           # position = "fill"
+           position = "dodge"
+           ) + 
   coord_flip() + 
   theme_bw() + 
   labs(x = "Target Site", 
@@ -530,12 +547,19 @@ ggplot(data = venn_df) +
        fill = "Lab Combinations")
 ```
 
+
+
 ```{r}
-venn_bar_table <- venn_df %>%
-  group_by(target_site) %>%
-  summarise(lab_set, target_site)
+venn_df %>% group_by(target_site) %>% 
+  count(lab_set) %>% 
+  pivot_wider(names_from = "lab_set", values_from = "n", values_fill = 0)
 ```
 
+```{r}
+# venn_bar_table <- venn_df %>%
+#   group_by(target_site) %>%
+#   summarise(lab_set, target_site)
+```
 
 ### Read Count Replicate v Replicate Scatter Plots
 #### Overlapping Off-Target Coordinates
