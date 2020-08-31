@@ -171,7 +171,8 @@ changeseq_df <-changeseq_lst %>%
            target_site = str_remove(target_site,  "CRL[:digit:]*_"),
             target_site = str_remove(target_site, "_sampled_"))
 
-unique(changeseq_df$changeseq_run)
+## Annotating with sample metadata
+changeseq_anno_df <- left_join(changeseq_metadata_df, changeseq_df)
 ```
 
 ==================================================================================================================================================
