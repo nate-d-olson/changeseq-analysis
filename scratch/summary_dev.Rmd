@@ -14,7 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse); packageVersion("tidyverse")
 library(yaml); packageVersion("yaml")
 library(here); packageVersion("here")
-library(stringr); packageVersion("stringr")
 ```
 
 # Objective & Details {.tabset .tabset-pills}
