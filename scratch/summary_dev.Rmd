@@ -126,32 +126,24 @@ NN1_seq_info %>% DT::datatable()
 ![NN replicate 2 sequencing information.](/Users/sdm8/Desktop/changeseq-analysis/data-raw/sequencing_info/SAV_NN_A-F.re-sequenced_08.14.2020_analysis graphs.png)
 
 ```{r}
-NN2_seq_info <- read.csv(here("data-raw/sequencing_info//Users/sdm8/Desktop/changeseq-analysis/data-raw/sequencing_info/SAV_NN_A-F.re-sequenced_08.14.2020_summary stats.csv"))
+NN2_seq_info <- read.csv(here("data-raw/sequencing_info/SAV_NN_A-F.re-sequenced_08.14.2020_summary stats.csv"))
 
 NN2_seq_info %>% DT::datatable()
 ```
+
+**NN Summary**
+```{r}
+NN2_seq_summ<- read.csv(here("data-raw/sequencing_info/SAV_Summary_NN_March14_2020.csv"))
+
+NN2_seq_summ %>% DT::datatable()
+```
+
 
 ==================================================================================================================================================
 
 # Analysis {.tabset .tabset-pills}
 ## Coding 
 ### Loading and Munging data 
-
-
-```{r}
-## CREATE METADATA DF
-## Using message = FALSE to avoid printing read_tsv message about column specifications
-file_list <- as.list(list.files(path = here("data-raw"), 
-                           pattern = "identified_matched.txt",
-                           include.dirs = TRUE, full.names = TRUE, 
-                           recursive = TRUE) %>% 
-    str_remove(., paste0(here("data-raw"),"/")))
-
-## make that into a data frame
-changeseq_metadata_df <- tibble(file_path = unlist(file_list)) %>% 
-  separate(file_path, c("lab","changesq_run"), 
-           sep = "/", remove = FALSE) 
-```
 
 Locate files, set up metadata df
 ```{r message = FALSE}
@@ -166,8 +158,7 @@ file_list <- as.list(list.files(path = here("data-raw"),
 ## make that into a data frame
 changeseq_metadata_df <- tibble(file_path = unlist(file_list)) %>% 
   separate(file_path, c("lab","changeseq_run"), 
-           sep = "/", remove = FALSE) 
-
+           sep = "/", remove = FALSE)
 
 ## READ IN FILES - CREATE 1 DF
 changeseq_lst <- list.files(path = here("data-raw"), 
@@ -178,12 +169,10 @@ changeseq_lst <- list.files(path = here("data-raw"),
 
 changeseq_df <-changeseq_lst %>%
   map_dfr(read_tsv, .id = "changeseq_run") %>% 
-   mutate(## target site name begins 5 characters into string of changeseq_run
-          target_site = str_sub(changeseq_run, 5),
-          ## further edit target site col if contains the St Jude file prefixes of CRLXXXX
-           target_site = str_remove(target_site,  "CRL[:digit:]*_"),
-            target_site = str_remove(target_site, "_sampled_"),
-          target_site = str_remove(target_site, "_identified_matched.txt"))
+  mutate(target_site = str_remove(changeseq_run, "_identified_matched.txt"),
+         target_site = str_remove(target_site,  "CRL[:digit:]*_"))
+
+unique(changeseq_df$target_site)
 
 ## Annotating with sample metadata
 changeseq_anno_df <- left_join(changeseq_metadata_df, changeseq_df)
@@ -225,11 +214,11 @@ summary_df <- changeseq_anno_df %>%
            ## assign off-target read counts in non-on-target rows
             off_target = if_else(on_target == 0, Nuclease_Read_Count, 0),
             ## seqs with subs only = seq in Site_Sequence col only
-            Sub_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
+            Sub_Only = if_else(is.na(Site_Sequence_Gaps_Allowed), TRUE, FALSE),
             ## seqs with indels only = seq in Site_Sequence_Gaps_Allowed col only
-            Indel_Only = if_else(is.na(Site_Sequence_Gaps_Allowed), TRUE, FALSE),
+            Indel_Only = if_else(is.na(Site_Sequence), TRUE, FALSE),
             ## seqs with two possible reps = seq in both cols
-            Sub_or_Indel = if_else(is.na(Sub_Only || Indel_Only), FALSE, TRUE))
+            Sub_or_Indel = if_else((Sub_Only == FALSE & Indel_Only == FALSE), TRUE, FALSE))
 ```
   
 **Number of sequences with substitutions only**
@@ -256,13 +245,12 @@ __NOTE__ CONSIDERING SEQUENCES THAT HAVE SUBSTITUTIONS ONLY...
 ```{r}
 ## create df of all off-target rows sorted by decreasing read count value
 off_target_df <- summary_df %>%
-    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
-           on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0)) %>% 
-    filter(Substitution_Only == TRUE) %>%
-        arrange(-Nuclease_Read_Count)
+  filter(!Site_Substitution_Number == 0) 
 
 ## take the top 25% of the off-target df - based on read count value
 top_quarter_off_target_df <- off_target_df %>%
+      filter(Sub_Only == TRUE) %>%
+        arrange(-Nuclease_Read_Count) %>%
     ## Use top_frac to get the top 25% - use group_by to capture within run or site analysis
       top_frac(0.25, wt = Nuclease_Read_Count) %>%
   group_by(changeseq_run, lab, target_site) %>% 
@@ -273,9 +261,6 @@ top_quarter_off_target_df <- off_target_df %>%
 ```{r}
 ## create df to plot ratio between on-target read count and most prevalent off-target read count per sample
 on_top_off_df <- summary_df %>% 
-    mutate(Site_Substitution_Number = if_else(is.na(Site_Substitution_Number), -1, Site_Substitution_Number), 
-            on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0),
-           off_target = if_else(on_target == 0, Nuclease_Read_Count, 0)) %>% 
     group_by(changeseq_run, lab, target_site) %>% 
     summarise(on_target_count = max(on_target),
               off_target_max = max(off_target)) %>% 
@@ -290,9 +275,9 @@ on_top_off_df <- summary_df %>%
 **Read count for seqs w/ 6 substitutions from target sequence**
 ```{r}
 ## create df to plot the binned read counts of off-target substitution numbers
-substitution_readcount_df <- summary_df %>%
-    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE)) %>% 
-    filter(Substitution_Only == TRUE,
+substitution_readcount_df <- summary_df %>% 
+    filter(Sub_Only == TRUE,
+           ## rids rows with NAs that were set to -1 earlier (these are off-targets with indels only)
            Site_Substitution_Number > 0) %>% 
     group_by(changeseq_run, lab, target_site, Site_Substitution_Number) %>% 
     summarise(substitution_read_count = sum(Nuclease_Read_Count))
@@ -359,6 +344,7 @@ ggplot(total_count_df) +
     labs(x = "Editing Target Site", y = "Total Read Count", 
          fill = "Lab")
 ```
+
 ```{r}
 ggplot(target_count_df) + 
     geom_bar(aes(x = target_site, y = on_target_count, fill = lab), 
@@ -414,12 +400,6 @@ For each target site, the number of off-target sequences that are resolved by su
 ```{r}
 off_target_seq_align_df %>% 
     ## First make the table long
-    gather(key = "metric", value = "value", -changeseq_run, -lab, -target_site)
-```
-
-```{r}
-off_target_seq_align_df %>% 
-    ## First make the table long
     gather(key = "metric", value = "value", -changeseq_run, -lab, -target_site) %>% 
     ggplot() +
     geom_bar(aes(x = metric, 
@@ -432,8 +412,9 @@ off_target_seq_align_df %>%
     facet_wrap(~target_site, scales = "free_y") +
     theme_bw() +
     theme(axis.text.x = element_text(angle = -45, hjust = 0)) +
-  labs(x = "Mismatch Type", y = "Number of Sequences", fill = "Lab")
+  labs(x = "Mismatch Type", y = "Number of Sequences/Off-Target Locations", fill = "Lab")
 ```
+__NOTE__ The y axes are different for each target site
 
 The off-target sequences are aligned to the target sequence. These are binned in the following manner: in order to align properly to the target sequence, the off-target sequence could be resolve with substitutions (and assigned a substitution number), gaps (insertions or deletions) or by both possibilities. Here, I have binned them accordingly. As before, no differences are observed between the samples sequenced at St. Jude but run through the CHANGE-Seq bioinformatics pipeline by me and St. Jude, however, variance is observed between the samples sequenced at NIST vs. St. Jude. For samples A and B, NIST-sequenced off-target reads are overall in lower numbers as compared to St. Jude.
 
@@ -448,7 +429,7 @@ ggplot(top_quarter_off_target_df) +
              position = "dodge", stat = "identity") +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
-    labs(x = "Total Read Count of Top 25% Off-Targets", y = "Editing Target Site", 
+    labs(x = "Editing Target Site", y = "Total Read Count of \n Top 25% Off-Targets", 
          fill = "Lab")
 ```
 
@@ -462,7 +443,7 @@ ggplot(on_top_off_df) +
                shape = 21, alpha = 0.5) + 
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90)) +
-        labs(x = "Editing Target Site", y = "On-Target Rate to Most Prevalent Off-Target", 
+        labs(x = "Editing Target Site", y = "On-Target Rate to Most \n Prevalent Off-Target", 
          fill = "Lab")
 ```
 
@@ -472,7 +453,6 @@ As seen with the on-target rate considering total read counts, NIST has higher r
 
 For each substitution number (or for indels only or subs/indels which are grouped separately), the number of off-target sequences that are classified as such as such are plotted for each target sample and lab. 
 
-__NOTE__ I currently have these plotting read counts but we may want to either replace this with or add another graph that shows occurrences for each sub number.
 
 ```{r}
 indel_df <- off_target_seq_align_df %>% 
@@ -487,36 +467,62 @@ diff_cat_read_count_df <- substitution_readcount_df %>%
   bind_rows(indel_df)
 
 ggplot(diff_cat_read_count_df) +
-    geom_bar(aes(x = diff_cat,
+    geom_bar(aes(x = diff_cat, y = read_count,
                  fill = lab), 
-             position = "dodge") +
+             position = "dodge", stat = "identity") +
   facet_wrap(~target_site) + 
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
-    labs(x = "Difference Type",
+    labs(x = "Alignment  Type", y = "Read Count",
          fill = "Lab")
 ```
+
+### Number of Locations (Sequences) per Off-Target Sequence Alignment Type
+
+For each target site how many off-target locations (genomic coordinates) are there for each classified substitution (1-6) or gap (aka indel) or substitution/indel.
+
 ```{r}
-changeseq_anno_df %>% 
-  filter(!is.na(Site_Substitution_Number)) %>% 
-  mutate(target_site = str_remove(target_site, "_GM24385_ident.*")) %>% 
-  ggplot() + 
-  geom_bar(aes(x = Site_Substitution_Number, fill = lab),
-           position = "dodge") + 
+off_targ_num_seq_df <- off_target_df %>%
+  select(lab, changeseq_run, 'Genomic Coordinate', Nuclease_Read_Count, Site_Sequence, Site_Substitution_Number, 
+         Site_Sequence_Gaps_Allowed, target_site, on_target, off_target, Sub_Only, Indel_Only, Sub_or_Indel) %>%
+  ## adding cols for specific sub numbers, indel only and sub/indel cols already exist
+    mutate(sub1_only = if_else((Site_Substitution_Number == 1 & (is.na(Site_Sequence_Gaps_Allowed))), TRUE, FALSE),
+          sub2_only = if_else((Site_Substitution_Number == 2 & (is.na(Site_Sequence_Gaps_Allowed))), TRUE, FALSE),
+          sub3_only = if_else((Site_Substitution_Number == 3 & (is.na(Site_Sequence_Gaps_Allowed))), TRUE, FALSE),
+          sub4_only = if_else((Site_Substitution_Number == 4 & (is.na(Site_Sequence_Gaps_Allowed))), TRUE, FALSE),
+          sub5_only = if_else((Site_Substitution_Number == 5 & (is.na(Site_Sequence_Gaps_Allowed))), TRUE, FALSE),
+          sub6_only = if_else((Site_Substitution_Number == 6 & (is.na(Site_Sequence_Gaps_Allowed))), TRUE, FALSE)) %>% 
+    group_by(lab, target_site) %>%
+    summarise(sub1_only_total = sum(sub1_only), 
+              sub2_only_total = sum(sub2_only),
+              sub3_only_total = sum(sub3_only),
+              sub4_only_total = sum(sub4_only),
+              sub5_only_total = sum(sub5_only),
+              sub6_only_total = sum(sub6_only),
+              indel_only_total = sum(Indel_Only),
+              sub_or_indel_only_total = sum(Sub_or_Indel)) %>%
+  pivot_longer(., cols = c(sub1_only_total, sub2_only_total, sub3_only_total, sub4_only_total, sub5_only_total, 
+                           sub6_only_total, indel_only_total, sub_or_indel_only_total),
+              names_to = "classification", values_to = "num_seqs")
+
+
+ggplot(off_targ_num_seq_df) +
+    geom_bar(aes(x = classification, y = num_seqs,
+                 fill = lab), 
+             position = "dodge", stat = "identity") +
   facet_wrap(~target_site) + 
-  theme_bw()
+    theme_bw() + 
+    theme(axis.text.x = element_text(angle = 90)) + 
+    labs(x = "Alignment  Type", y = "Number of Sequences/ \n Off-Target Locations",
+         fill = "Lab")
 ```
 
 
-### Venn Bar Plots
+### Venn Bar: Off-Target Locations 
 
 As opposed to the typical venn diagrams, these show relative abundance and give appropriate scaling to visualize values. 
 
-__NOTE__ NATE - can we add the values on the graph??
-
-```{r}
-off_target_lab_set
-```
+Based on genomic coordinates, it lists which replicates/samples have the same location (genomic coordinate) in its output. In the plot below the locations that are shared between replicates and unique to each for each sample are shown. 
 
 ```{r}
 off_target_scatter_df <- off_target_df %>% 
@@ -538,7 +544,7 @@ venn_df <- off_target_df %>%
 ggplot(data = venn_df) + 
   geom_bar(aes(x = target_site, fill = lab_set), 
            # position = "fill"
-           position = "dodge"
+           position = "fill"
            ) + 
   coord_flip() + 
   theme_bw() + 
@@ -547,19 +553,13 @@ ggplot(data = venn_df) +
        fill = "Lab Combinations")
 ```
 
-
-
 ```{r}
 venn_df %>% group_by(target_site) %>% 
   count(lab_set) %>% 
   pivot_wider(names_from = "lab_set", values_from = "n", values_fill = 0)
 ```
 
-```{r}
-# venn_bar_table <- venn_df %>%
-#   group_by(target_site) %>%
-#   summarise(lab_set, target_site)
-```
+
 
 ### Read Count Replicate v Replicate Scatter Plots
 #### Overlapping Off-Target Coordinates
@@ -567,11 +567,40 @@ venn_df %>% group_by(target_site) %>%
 To mimic the plots of Figure1, i in the CHANGE-Seq manuscript, common genomic coordinates of off-targets for each sample replicates are plotted in log scale. 
 
 ```{r}
-## NSN vs. NSS: Concordant Off-Target Coordinates
-nsn_v_nss <- off_target_scatter_df %>% 
+
+nnn1_v_nnn2 <- summary_df %>% 
+    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
+           on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0)) %>% 
+    filter(Substitution_Only == TRUE) %>%
+        arrange(-Nuclease_Read_Count) %>%
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NSS != 0, NSN != 0) %>%
-  ggplot(aes(x = NSN, y = NSS)) + 
+   filter(NNN1 != 0, NNN2 != 0) %>%
+  ggplot(aes(x = NNN1, y = NNN2)) + 
+   geom_point(alpha = 0.25) + 
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw()
+
+###########
+
+nnn1_v_nnn2 <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+   filter(NNN1 != 0, NNN2 != 0) %>%
+  ggplot(aes(x = NNN1, y = NNN2)) + 
+   geom_point(alpha = 0.25) + 
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw()
+
+## NSN vs. NSS: Concordant Off-Target Coordinates
+nsn1_v_nss1 <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+   filter(NSS1 != 0, nsn1_v_nss1 != 0) %>%
+  ggplot(aes(x = NSN1, y = NSS1)) + 
    geom_point(alpha = 0.25) + 
    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
   scale_x_log10() + 
@@ -580,10 +609,10 @@ nsn_v_nss <- off_target_scatter_df %>%
   theme_bw()
 
 ## NSN vs. NNN: Concordant Off-Target Coordinates
-nsn_v_nnn <- off_target_scatter_df %>% 
+nsn1_v_nnn1 <- off_target_scatter_df %>% 
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NSN != 0, NNN != 0) %>%
-  ggplot(aes(x = NSN, y = NNN)) + 
+   filter(NSN1 != 0, NNN1 != 0) %>%
+  ggplot(aes(x = NSN1, y = NNN1)) + 
    geom_point(alpha = 0.25) + 
    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
   scale_x_log10() + 
@@ -592,10 +621,34 @@ nsn_v_nnn <- off_target_scatter_df %>%
   theme_bw()
 
 ## NSS vs. NNN: Concordant Off-Target Coordinates
-nss_v_nnn <- off_target_scatter_df %>% 
+nss1_v_nnn1 <- off_target_scatter_df %>% 
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NSS != 0, NNN != 0) %>%
-  ggplot(aes(x = NSS, y = NNN)) + 
+   filter(NSS1 != 0, NNN1 != 0) %>%
+  ggplot(aes(x = NSS1, y = NNN1)) + 
+   geom_point(alpha = 0.25) + 
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw()
+
+## NNN2 V NSN1
+nsn1_v_nnn2 <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+   filter(NSN1 != 0, NNN2 != 0) %>%
+  ggplot(aes(x = NSN1, y = NNN2)) + 
+   geom_point(alpha = 0.25) + 
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~target_site, ncol = 1) + 
+  theme_bw()
+
+## NNN2 V NSS1
+nss1_v_nnn2 <- off_target_scatter_df %>% 
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+   filter(NSS1 != 0, NNN2 != 0) %>%
+  ggplot(aes(x = NSS1, y = NNN2)) + 
    geom_point(alpha = 0.25) + 
    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
   scale_x_log10() + 
