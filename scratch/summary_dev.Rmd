@@ -152,31 +152,30 @@ Locate files, set up metadata df
 file_list <- as.list(list.files(path = here("data-raw"), 
                            pattern = "identified_matched.txt",
                            include.dirs = TRUE, full.names = TRUE, 
-                           recursive = TRUE) %>% 
-    str_remove(., paste0(here("data-raw"),"/")))
+                           recursive = TRUE))
+
+file_names <- str_remove(file_list, paste0(here("data-raw"),"/"))
+
+changeseq_lst <- set_names(file_list, file_names)
 
 ## make that into a data frame
-changeseq_metadata_df <- tibble(file_path = unlist(file_list)) %>% 
-  separate(file_path, c("lab","changeseq_run"), 
-           sep = "/", remove = FALSE)
-
-## READ IN FILES - CREATE 1 DF
-changeseq_lst <- list.files(path = here("data-raw"), 
-                           pattern = "identified_matched.txt",
-                           include.dirs = TRUE, full.names = TRUE, 
-                           recursive = TRUE) %>% 
-     set_names(basename(.))
-
-changeseq_df <-changeseq_lst %>%
-  map_dfr(read_tsv, .id = "changeseq_run") %>% 
+changeseq_metadata_df <- tibble(changeseq_file = unlist(file_names)) %>% 
+  separate(changeseq_file, c("lab","changeseq_run"), 
+           sep = "/", remove = FALSE) %>% 
   mutate(target_site = str_remove(changeseq_run, "_identified_matched.txt"),
          target_site = str_remove(target_site,  "CRL[:digit:]*_"))
 
-unique(changeseq_df$target_site)
+## READ IN FILES - CREATE 1 DF
+changeseq_df <-changeseq_lst %>%
+  map_dfr(read_tsv, .id = "changeseq_file")
 
 ## Annotating with sample metadata
-changeseq_anno_df <- left_join(changeseq_metadata_df, changeseq_df)
+changeseq_anno_df <- changeseq_df %>% 
+  left_join(changeseq_metadata_df) %>% 
+  mutate(changeseq_run = str_remove(changeseq_run, ".*/"))
 ```
+
+
 
 ==================================================================================================================================================
 
