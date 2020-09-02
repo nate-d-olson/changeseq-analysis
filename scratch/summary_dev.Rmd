@@ -332,6 +332,9 @@ summary_table %>% DT::datatable()
 ### Total Read Counts & On-Target Read Counts per Sample
 
 For each target site, each lab's total read count is plotted. This gives an idea how much data is generated as a whole for each target site. For each target site, each lab's total on-target read count is plotted. 
+```{r}
+total_count_df
+```
 
 
 ```{r}
@@ -596,16 +599,16 @@ nnn1_v_nnn2 <- off_target_scatter_df %>%
   theme_bw()
 
 ## NSN vs. NSS: Concordant Off-Target Coordinates
-nsn1_v_nss1 <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NSS1 != 0, nsn1_v_nss1 != 0) %>%
-  ggplot(aes(x = NSN1, y = NSS1)) + 
-   geom_point(alpha = 0.25) + 
-   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  facet_wrap(~target_site, ncol = 1) + 
-  theme_bw()
+# nsn1_v_nss1 <- off_target_scatter_df %>% 
+#   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+#    filter(NSS1 != 0, nsn1_v_nss1 != 0) %>%
+#   ggplot(aes(x = NSN1, y = NSS1)) + 
+#    geom_point(alpha = 0.25) + 
+#    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+#   scale_x_log10() + 
+#   scale_y_log10() + 
+#   facet_wrap(~target_site, ncol = 1) + 
+#   theme_bw()
 
 ## NSN vs. NNN: Concordant Off-Target Coordinates
 nsn1_v_nnn1 <- off_target_scatter_df %>% 
@@ -619,17 +622,6 @@ nsn1_v_nnn1 <- off_target_scatter_df %>%
   facet_wrap(~target_site, ncol = 1) + 
   theme_bw()
 
-## NSS vs. NNN: Concordant Off-Target Coordinates
-nss1_v_nnn1 <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NSS1 != 0, NNN1 != 0) %>%
-  ggplot(aes(x = NSS1, y = NNN1)) + 
-   geom_point(alpha = 0.25) + 
-   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  facet_wrap(~target_site, ncol = 1) + 
-  theme_bw()
 
 ## NNN2 V NSN1
 nsn1_v_nnn2 <- off_target_scatter_df %>% 
@@ -644,20 +636,20 @@ nsn1_v_nnn2 <- off_target_scatter_df %>%
   theme_bw()
 
 ## NNN2 V NSS1
-nss1_v_nnn2 <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NSS1 != 0, NNN2 != 0) %>%
-  ggplot(aes(x = NSS1, y = NNN2)) + 
-   geom_point(alpha = 0.25) + 
-   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  facet_wrap(~target_site, ncol = 1) + 
-  theme_bw()
+# nss1_v_nnn2 <- off_target_scatter_df %>% 
+#   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+#    filter(NSS1 != 0, NNN2 != 0) %>%
+#   ggplot(aes(x = NSS1, y = NNN2)) + 
+#    geom_point(alpha = 0.25) + 
+#    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+#   scale_x_log10() + 
+#   scale_y_log10() + 
+#   facet_wrap(~target_site, ncol = 1) + 
+#   theme_bw()
 ```
 
 ```{r fig.height= 6}
-ggpubr::ggarrange(nsn_v_nss, nsn_v_nnn, nss_v_nnn, ncol = 3)
+# ggpubr::ggarrange(nsn_v_nss, nsn_v_nnn, nss_v_nnn, ncol = 3)
 ```
 
 #### Unique Read Count Occurrence Plots
