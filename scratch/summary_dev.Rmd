@@ -114,7 +114,7 @@ A_S1_L001_R1_001.fastq.gz > A_S1_L001_R1_001_trimmed.fq
 #### Sequencing Reports & Information
 
 **NN1**
-![NN replicate 1 sequencing information.](/Users/sdm8/Desktop/changeseq-analysis/data-raw/sequencing_info/SAV_NN_A-F_03.14.2020_analysis graphs.png)
+![NN replicate 1 sequencing information.](../data-raw/sequencing_info/SAV_NN_A-F_03.14.2020_analysis graphs.png)
 
 ```{r}
 NN1_seq_info <- read.csv(here("data-raw/sequencing_info/SAV_NN_A-F_03.14.2020_summary stats.csv"))
@@ -123,7 +123,7 @@ NN1_seq_info %>% DT::datatable()
 ```
 
 **NN1**
-![NN replicate 2 sequencing information.](/Users/sdm8/Desktop/changeseq-analysis/data-raw/sequencing_info/SAV_NN_A-F.re-sequenced_08.14.2020_analysis graphs.png)
+![NN replicate 2 sequencing information.](../data-raw/sequencing_info/SAV_NN_A-F.re-sequenced_08.14.2020_analysis graphs.png)
 
 ```{r}
 NN2_seq_info <- read.csv(here("data-raw/sequencing_info/SAV_NN_A-F.re-sequenced_08.14.2020_summary stats.csv"))
