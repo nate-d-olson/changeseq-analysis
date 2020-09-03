@@ -175,7 +175,10 @@ changeseq_anno_df <- changeseq_df %>%
   mutate(changeseq_run = str_remove(changeseq_run, ".*/"))
 ```
 
-
+```{r}
+unique(changeseq_anno_df$lab)
+unique(changeseq_anno_df$target_site)
+```
 
 ==================================================================================================================================================
 
@@ -561,20 +564,17 @@ venn_df %>% group_by(target_site) %>%
   pivot_wider(names_from = "lab_set", values_from = "n", values_fill = 0)
 ```
 
-
-
 ### Read Count Replicate v Replicate Scatter Plots
 #### Overlapping Off-Target Coordinates
 
 To mimic the plots of Figure1, i in the CHANGE-Seq manuscript, common genomic coordinates of off-targets for each sample replicates are plotted in log scale. 
 
 ```{r}
-
 nnn1_v_nnn2 <- summary_df %>% 
-    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
-           on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0)) %>% 
-    filter(Substitution_Only == TRUE) %>%
-        arrange(-Nuclease_Read_Count) %>%
+    filter(!Site_Substitution_Number == 0) %>%
+  select(Chromosome, Start, End, 'Genomic Coordinate', Nuclease_Read_Count, Site_Sequence,
+         Site_Substitution_Number, Site_Sequence_Gaps_Allowed, lab, changeseq_run, target_site, 
+         Sub_Only, Indel_Only, Sub_or_Indel) %>%
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
    filter(NNN1 != 0, NNN2 != 0) %>%
   ggplot(aes(x = NNN1, y = NNN2)) + 
@@ -585,33 +585,27 @@ nnn1_v_nnn2 <- summary_df %>%
   facet_wrap(~target_site, ncol = 1) + 
   theme_bw()
 
-###########
-
-nnn1_v_nnn2 <- off_target_scatter_df %>% 
+nsn1_v_nss1 <- summary_df %>% 
+    filter(!Site_Substitution_Number == 0) %>%
+  select(Chromosome, Start, End, 'Genomic Coordinate', Nuclease_Read_Count, Site_Sequence,
+         Site_Substitution_Number, Site_Sequence_Gaps_Allowed, lab, changeseq_run, target_site, 
+         Sub_Only, Indel_Only, Sub_or_Indel) %>%
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NNN1 != 0, NNN2 != 0) %>%
-  ggplot(aes(x = NNN1, y = NNN2)) + 
-   geom_point(alpha = 0.25) + 
-   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  facet_wrap(~target_site, ncol = 1) + 
-  theme_bw()
+    filter(NSS1 != 0, NSN1 != 0) %>%
+   ggplot(aes(x = NSN1, y = NSS1)) + 
+    geom_point(alpha = 0.25) + 
+    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+   scale_x_log10() + 
+   scale_y_log10() + 
+   facet_wrap(~target_site, ncol = 1) + 
+   theme_bw()
 
-## NSN vs. NSS: Concordant Off-Target Coordinates
-# nsn1_v_nss1 <- off_target_scatter_df %>% 
-#   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-#    filter(NSS1 != 0, nsn1_v_nss1 != 0) %>%
-#   ggplot(aes(x = NSN1, y = NSS1)) + 
-#    geom_point(alpha = 0.25) + 
-#    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-#   scale_x_log10() + 
-#   scale_y_log10() + 
-#   facet_wrap(~target_site, ncol = 1) + 
-#   theme_bw()
-
-## NSN vs. NNN: Concordant Off-Target Coordinates
-nsn1_v_nnn1 <- off_target_scatter_df %>% 
+########### THIS ON IS THROWING ERRORS
+nsn1_v_nnn1 <- summary_df %>% 
+    filter(!Site_Substitution_Number == 0) %>%
+  select(Chromosome, Start, End, 'Genomic Coordinate', Nuclease_Read_Count, Site_Sequence,
+         Site_Substitution_Number, Site_Sequence_Gaps_Allowed, lab, changeseq_run, target_site, 
+         Sub_Only, Indel_Only, Sub_or_Indel) %>%
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
    filter(NSN1 != 0, NNN1 != 0) %>%
   ggplot(aes(x = NSN1, y = NNN1)) + 
@@ -622,9 +616,12 @@ nsn1_v_nnn1 <- off_target_scatter_df %>%
   facet_wrap(~target_site, ncol = 1) + 
   theme_bw()
 
-
-## NNN2 V NSN1
-nsn1_v_nnn2 <- off_target_scatter_df %>% 
+########### THIS ON IS THROWING ERRORS
+nsn1_v_nnn2 <-summary_df %>% 
+    filter(!Site_Substitution_Number == 0) %>%
+  select(Chromosome, Start, End, 'Genomic Coordinate', Nuclease_Read_Count, Site_Sequence,
+         Site_Substitution_Number, Site_Sequence_Gaps_Allowed, lab, changeseq_run, target_site, 
+         Sub_Only, Indel_Only, Sub_or_Indel) %>%
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
    filter(NSN1 != 0, NNN2 != 0) %>%
   ggplot(aes(x = NSN1, y = NNN2)) + 
@@ -635,21 +632,39 @@ nsn1_v_nnn2 <- off_target_scatter_df %>%
   facet_wrap(~target_site, ncol = 1) + 
   theme_bw()
 
-## NNN2 V NSS1
-# nss1_v_nnn2 <- off_target_scatter_df %>% 
-#   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-#    filter(NSS1 != 0, NNN2 != 0) %>%
-#   ggplot(aes(x = NSS1, y = NNN2)) + 
-#    geom_point(alpha = 0.25) + 
-#    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-#   scale_x_log10() + 
-#   scale_y_log10() + 
-#   facet_wrap(~target_site, ncol = 1) + 
-#   theme_bw()
+########### THIS ON IS THROWING ERRORS
+nss1_v_nnn2 <- summary_df %>% 
+    filter(!Site_Substitution_Number == 0) %>%
+  select(Chromosome, Start, End, 'Genomic Coordinate', Nuclease_Read_Count, Site_Sequence,
+         Site_Substitution_Number, Site_Sequence_Gaps_Allowed, lab, changeseq_run, target_site, 
+         Sub_Only, Indel_Only, Sub_or_Indel) %>%
+  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+    filter(NSS1 != 0, NNN2 != 0) %>%
+   ggplot(aes(x = NSS1, y = NNN2)) + 
+    geom_point(alpha = 0.25) + 
+    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
+   scale_x_log10() + 
+   scale_y_log10() + 
+   facet_wrap(~target_site, ncol = 1) + 
+   theme_bw()
 ```
 
+```{r}
+nnn1_v_nnn2
+nsn1_v_nss1
+nsn1_v_nnn1
+nsn1_v_nnn2
+nss1_v_nnn2
+
+
+
+```
+
+
+
+
 ```{r fig.height= 6}
-# ggpubr::ggarrange(nsn_v_nss, nsn_v_nnn, nss_v_nnn, ncol = 3)
+ggpubr::ggarrange(nnn1_v_nnn2, nsn1_v_nss1, nsn1_v_nnn1, nsn1_v_nnn2, nss1_v_nnn2, ncol = 5)
 ```
 
 #### Unique Read Count Occurrence Plots
