@@ -174,7 +174,10 @@ changeseq_anno_df <- changeseq_df %>%
   mutate(changeseq_run = str_remove(changeseq_run, ".*/"))
 ```
 
-
+```{r}
+unique(changeseq_anno_df$lab)
+unique(changeseq_anno_df$target_site)
+```
 
 
 ### Calculating Summary Metrics
@@ -559,8 +562,6 @@ venn_df %>% group_by(target_site) %>%
   pivot_wider(names_from = "lab_set", values_from = "n", values_fill = 0)
 ```
 
-
-
 ### Read Count Replicate v Replicate Scatter Plots
 #### Overlapping Off-Target Coordinates
 
@@ -612,7 +613,6 @@ nsn1_v_nnn1 <- counts_by_lab %>%
   facet_wrap(~target_site, ncol = 1) + 
   theme_bw()
 
-
 ## NNN2 V NSN1
 nsn1_v_nnn2 <- counts_by_lab %>% 
    filter(NSN1 != 0, NNN2 != 0) %>%
@@ -634,7 +634,9 @@ nss1_v_nnn2 <- counts_by_lab %>%
   scale_y_log10() +
   facet_wrap(~target_site, ncol = 1) +
   theme_bw()
+
 ```
+
 
 ```{r fig.height= 6}
 ggpubr::ggarrange(nnn1_v_nnn2, nsn1_v_nss1, nsn1_v_nnn1, nsn1_v_nnn2, nss1_v_nnn2, ncol = 5)
