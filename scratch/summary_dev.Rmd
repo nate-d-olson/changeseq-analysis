@@ -57,37 +57,38 @@ NSN         | NIST        | St. Jude           | NIST
 NSS         | NIST        | St. Jude           | St. Jude
 
 **Lab-Samples** 
-* NNN1
-  + 01.06.2020 – 01.13.2020: wet lab production 
-  + 01.13.2020: samples sequencing libraries (30 uL each) were stored at -20C
-  + samples pooled according to St. Jude's  qPCR quant values
-  + 03.11.2020 - 03.14.2020: NIST sequencing __NOTE__ This run time is longer than normal for CHANGE-seq since it was run for the full 600 cycles
-  + Sierra performed CHANGE-Seq run 06.30.2020
-* NNN2 
-  + 01.06.2020 – 01.13.2020: wet lab production 
-  + 01.13.2020: samples sequencing libraries (30 uL each) were stored at -20C
-  + samples pooled according to Natasha's AATI values
-  + same library prepped samples as NN1 and NSN1 NSS1 but sequenced on an expired MiSeq kit to test before running new prepped AEF replicate samples. When these were of adequate quality, we incorporated them into this analysis. 
-* NSN1 
-  + 01.06.2020 – 01.13.2020: wet lab production 
-  + 01.13.2020: samples sequencing libraries (30 uL each) were stored at -20C
-  + 01.14.2020: 10 uL of each library was shipped on cold pack to St. Jude.
-  + samples pooled according to St. Jude's  qPCR quant values
-  + Unclear exact dates of the run. CHANGE-seq output files we were sent are dated 02.05.2020
-  + 02.06.2020 NIST received from St. Jude: QIAxcel (does DNA fragment analysis), qPCR, and CHANGE-seq output files
-  + Sierra performed CHANGE-Seq run 06.30.2020
-* NSS1
-  + 01.06.2020 – 01.13.2020: wet lab production 
-  + 01.13.2020: samples sequencing libraries (30 uL each) were stored at -20C
-  + 01.14.2020: 10 uL of each library was shipped on cold pack to St. Jude.
-  + samples pooled according to St. Jude's  qPCR quant values
-  + Unclear exact dates of the run. CHANGE-seq output files we were sent are dated 02.05.2020
-  + 02.06.2020 NIST received from St. Jude: QIAxcel (does DNA fragment analysis), qPCR, and CHANGE-seq output files
 
-*numbers denote replicate numbers*
-*St Jude has not yet re-run our sequencing of the original A-F samples. (NNS)*
+* NNN1  
+  + 01.06.2020 – 01.13.2020: wet lab production   
+  + 01.13.2020: samples sequencing libraries (30 uL each) were stored at -20C  
+  + samples pooled according to St. Jude's  qPCR quant values  
+  + 03.11.2020 - 03.14.2020: NIST sequencing __NOTE__ This run time is longer than normal for CHANGE-seq since it was run for the full 600 cycles  
+  + Sierra performed CHANGE-Seq run 06.30.2020  
+* NNN2   
+  + 01.06.2020 – 01.13.2020: wet lab production   
+  + 01.13.2020: samples sequencing libraries (30 uL each) were stored at -20C  
+  + samples pooled according to Natasha's AATI values  
+  + same library prepped samples as NN1 and NSN1 NSS1 but sequenced on an expired MiSeq kit to test before running new  prepped AEF replicate samples. When these were of adequate quality, we incorporated them into this analysis. 
+* NSN1  
+  + 01.06.2020 – 01.13.2020: wet lab production   
+  + 01.13.2020: samples sequencing libraries (30 uL each) were stored at -20C  
+  + 01.14.2020: 10 uL of each library was shipped on cold pack to St. Jude.  
+  + samples pooled according to St. Jude's  qPCR quant values  
+  + Unclear exact dates of the run. CHANGE-seq output files we were sent are dated 02.05.2020  
+  + 02.06.2020 NIST received from St. Jude: QIAxcel (does DNA fragment analysis), qPCR, and CHANGE-seq output files  
+  + Sierra performed CHANGE-Seq run 06.30.2020  
+* NSS1  
+  + 01.06.2020 – 01.13.2020: wet lab production  
+  + 01.13.2020: samples sequencing libraries (30 uL each) were stored at -20C  
+  + 01.14.2020: 10 uL of each library was shipped on cold pack to St. Jude.  
+  + samples pooled according to St. Jude's  qPCR quant values  
+  + Unclear exact dates of the run. CHANGE-seq output files we were sent are dated 02.05.2020  
+  + 02.06.2020 NIST received from St. Jude: QIAxcel (does DNA fragment analysis), qPCR, and CHANGE-seq output files  
 
-Samples run with CHANGE-Seq v1.2.7
+*numbers denote replicate numbers*  
+*St Jude has not yet re-run our sequencing of the original A-F samples. (NNS)*  
+
+Samples run with CHANGE-Seq v1.2.7  
 
 ### Data Pre-Run Steps
 
@@ -139,8 +140,6 @@ NN2_seq_summ %>% DT::datatable()
 ```
 
 
-==================================================================================================================================================
-
 # Analysis {.tabset .tabset-pills}
 ## Coding 
 ### Loading and Munging data 
@@ -177,7 +176,6 @@ changeseq_anno_df <- changeseq_df %>%
 
 
 
-==================================================================================================================================================
 
 ### Calculating Summary Metrics
 
@@ -569,26 +567,20 @@ venn_df %>% group_by(target_site) %>%
 To mimic the plots of Figure1, i in the CHANGE-Seq manuscript, common genomic coordinates of off-targets for each sample replicates are plotted in log scale. 
 
 ```{r}
+## Data frame with counts by genomic corrdinate and lab
+counts_by_lab <- summary_df %>% 
+  # Only including substitution off target edits
+  filter(Sub_Only) %>% 
+  ## Excluding redundant and unnecessary columns
+  # Extra columns results in non-matching counts by lab
+  select(Chromosome, Start, End, Strand, Site_Sequence, 
+         target_site, lab, Nuclease_Read_Count) %>% 
+  pivot_wider(names_from = "lab",
+              values_from = "Nuclease_Read_Count", 
+              values_fill = 0)
 
-nnn1_v_nnn2 <- summary_df %>% 
-    mutate(Substitution_Only = if_else(is.na(Site_Sequence), FALSE, TRUE),
-           on_target = if_else(Site_Substitution_Number == 0, Nuclease_Read_Count, 0)) %>% 
-    filter(Substitution_Only == TRUE) %>%
-        arrange(-Nuclease_Read_Count) %>%
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-   filter(NNN1 != 0, NNN2 != 0) %>%
-  ggplot(aes(x = NNN1, y = NNN2)) + 
-   geom_point(alpha = 0.25) + 
-   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  facet_wrap(~target_site, ncol = 1) + 
-  theme_bw()
-
-###########
-
-nnn1_v_nnn2 <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+## NNN1 vs. NNN2: Concordant Off-Target Coordinates
+nnn1_v_nnn2 <- counts_by_lab %>% 
    filter(NNN1 != 0, NNN2 != 0) %>%
   ggplot(aes(x = NNN1, y = NNN2)) + 
    geom_point(alpha = 0.25) + 
@@ -599,20 +591,18 @@ nnn1_v_nnn2 <- off_target_scatter_df %>%
   theme_bw()
 
 ## NSN vs. NSS: Concordant Off-Target Coordinates
-# nsn1_v_nss1 <- off_target_scatter_df %>% 
-#   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-#    filter(NSS1 != 0, nsn1_v_nss1 != 0) %>%
-#   ggplot(aes(x = NSN1, y = NSS1)) + 
-#    geom_point(alpha = 0.25) + 
-#    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-#   scale_x_log10() + 
-#   scale_y_log10() + 
-#   facet_wrap(~target_site, ncol = 1) + 
-#   theme_bw()
+nsn1_v_nss1 <- counts_by_lab %>%
+   filter(NSS1 != 0, NSN1 != 0) %>%
+  ggplot(aes(x = NSN1, y = NSS1)) +
+   geom_point(alpha = 0.25) +
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") +
+  scale_x_log10() +
+  scale_y_log10() +
+  facet_wrap(~target_site, ncol = 1) +
+  theme_bw()
 
 ## NSN vs. NNN: Concordant Off-Target Coordinates
-nsn1_v_nnn1 <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+nsn1_v_nnn1 <- counts_by_lab %>% 
    filter(NSN1 != 0, NNN1 != 0) %>%
   ggplot(aes(x = NSN1, y = NNN1)) + 
    geom_point(alpha = 0.25) + 
@@ -624,8 +614,7 @@ nsn1_v_nnn1 <- off_target_scatter_df %>%
 
 
 ## NNN2 V NSN1
-nsn1_v_nnn2 <- off_target_scatter_df %>% 
-  pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
+nsn1_v_nnn2 <- counts_by_lab %>% 
    filter(NSN1 != 0, NNN2 != 0) %>%
   ggplot(aes(x = NSN1, y = NNN2)) + 
    geom_point(alpha = 0.25) + 
@@ -636,20 +625,19 @@ nsn1_v_nnn2 <- off_target_scatter_df %>%
   theme_bw()
 
 ## NNN2 V NSS1
-# nss1_v_nnn2 <- off_target_scatter_df %>% 
-#   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = 0) %>% 
-#    filter(NSS1 != 0, NNN2 != 0) %>%
-#   ggplot(aes(x = NSS1, y = NNN2)) + 
-#    geom_point(alpha = 0.25) + 
-#    ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") + 
-#   scale_x_log10() + 
-#   scale_y_log10() + 
-#   facet_wrap(~target_site, ncol = 1) + 
-#   theme_bw()
+nss1_v_nnn2 <- counts_by_lab %>%
+   filter(NSS1 != 0, NNN2 != 0) %>%
+  ggplot(aes(x = NSS1, y = NNN2)) +
+   geom_point(alpha = 0.25) +
+   ggpubr::stat_cor(aes(label = ..rr.label..), method = "pearson") +
+  scale_x_log10() +
+  scale_y_log10() +
+  facet_wrap(~target_site, ncol = 1) +
+  theme_bw()
 ```
 
 ```{r fig.height= 6}
-# ggpubr::ggarrange(nsn_v_nss, nsn_v_nnn, nss_v_nnn, ncol = 3)
+ggpubr::ggarrange(nnn1_v_nnn2, nsn1_v_nss1, nsn1_v_nnn1, nsn1_v_nnn2, nss1_v_nnn2, ncol = 5)
 ```
 
 #### Unique Read Count Occurrence Plots
