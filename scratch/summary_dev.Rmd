@@ -9,11 +9,12 @@ output:
         code_folding: hide
 ---
 
-```{r setup}
+```{r setup, message = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse); packageVersion("tidyverse")
 library(yaml); packageVersion("yaml")
 library(here); packageVersion("here")
+library(plotly); packageVersion("plotly")
 ```
 
 # Objective & Details {.tabset .tabset-pills}
@@ -283,7 +284,7 @@ substitution_readcount_df <- summary_df %>%
     summarise(substitution_read_count = sum(Nuclease_Read_Count))
 ```
 
-## Table
+## Summary Metric Table
 
 ```{r}
 ## Making substitution count data frame wide for join
@@ -339,23 +340,23 @@ total_count_df
 
 
 ```{r}
-ggplot(total_count_df) + 
+ggplotly(ggplot(total_count_df) + 
     geom_bar(aes(x = target_site, y = total_read_count, fill = lab), 
              position = "dodge", stat = "identity") +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
     labs(x = "Editing Target Site", y = "Total Read Count", 
-         fill = "Lab")
+         fill = "Lab"))
 ```
 
 ```{r}
-ggplot(target_count_df) + 
+ggplotly(ggplot(target_count_df) + 
     geom_bar(aes(x = target_site, y = on_target_count, fill = lab), 
              position = "dodge", stat = "identity") +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
     labs(x = "Editing Target Site", y = "Total On-Target Read Count", 
-         fill = "Lab")
+         fill = "Lab"))
 ```
 
 
@@ -368,13 +369,13 @@ They were pointing to sample E's read fastq files.
 For each target site, each lab's on target rate (total on-target read count / total read count) is plotted. 
 
 ``````{r}
-ggplot(on_off_target_df) + 
+ggplotly(ggplot(on_off_target_df) + 
     geom_point(aes(x = target_site, y = on_target_rate, fill = lab), 
                shape = 21, alpha = 0.5) + 
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90)) +
         labs(x = "Editing Target Site", y = "On Target Rate", 
-         fill = "Lab")
+         fill = "Lab"))
 ```
 
 On-target rates for sample A, E, and F are nearly matched and variance for samples B, C, and D is observed. NIST-sequenced samples are slightly higher.
@@ -384,13 +385,13 @@ On-target rates for sample A, E, and F are nearly matched and variance for sampl
 For each target site, each lab's off-target rate (off-target read count / total read count) is plotted.
 
 ``````{r}
-ggplot(off_target_ratio) + 
+ggplotly(ggplot(off_target_ratio) + 
     geom_point(aes(x = target_site, y = off_target_ratio, fill = lab), 
                shape = 21, alpha = 0.5) + 
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90)) +
         labs(x = "Editing Target Site", y = "Off Target Rate", 
-         fill = "Lab")
+         fill = "Lab"))
 ```
 
 The rates of the off-target sequences are generally all higher than that of the on-target rates. Like the on-target rates, samples A, E, and F are similar in value. Samples B, C, and D have variance with the inverse of the above - the off-target rates are higher for the St. Jude-sequenced samples than that of the NIST-sequenced samples. 
@@ -401,10 +402,11 @@ The rates of the off-target sequences are generally all higher than that of the 
 For each target site, the number of off-target sequences that are resolved by substitutions only, indels (gaps) only, or substitutions *or* gaps are plotted for each lab. 
 
 ```{r}
-off_target_seq_align_df %>% 
+plot_off_target_seq_align_df <- off_target_seq_align_df %>%
     ## First make the table long
-    gather(key = "metric", value = "value", -changeseq_run, -lab, -target_site) %>% 
-    ggplot() +
+    gather(key = "metric", value = "value", -changeseq_run, -lab, -target_site) 
+
+ggplotly(ggplot(plot_off_target_seq_align_df) +
     geom_bar(aes(x = metric, 
                  y = value,
                  fill = lab),
@@ -415,7 +417,7 @@ off_target_seq_align_df %>%
     facet_wrap(~target_site, scales = "free_y") +
     theme_bw() +
     theme(axis.text.x = element_text(angle = -45, hjust = 0)) +
-  labs(x = "Mismatch Type", y = "Number of Sequences/Off-Target Locations", fill = "Lab")
+  labs(x = "Mismatch Type", y = "Number of Sequences/Off-Target Locations", fill = "Lab"))
 ```
 __NOTE__ The y axes are different for each target site
 
@@ -427,13 +429,13 @@ The off-target sequences are aligned to the target sequence. These are binned in
 For each target site, weighted by read count, the top 25% off-target sequence read counts for each lab are plotted. 
 
 ```{r}
-ggplot(top_quarter_off_target_df) + 
+ggplotly(ggplot(top_quarter_off_target_df) + 
     geom_bar(aes(x = target_site, y = top_quarter_offtarget_readcount, fill = lab), 
              position = "dodge", stat = "identity") +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
     labs(x = "Editing Target Site", y = "Total Read Count of \n Top 25% Off-Targets", 
-         fill = "Lab")
+         fill = "Lab"))
 ```
 
 ### Ratio of on-target read counts to the off-target sequence with the highest read count
@@ -441,13 +443,13 @@ ggplot(top_quarter_off_target_df) +
 The on-target read count divided by the most prevalent off-target sequence (the off-target sequence with the largest read count) for each sample is plotted for each lab. 
 
 ``````{r}
-ggplot(on_top_off_df) + 
+ggplotly(ggplot(on_top_off_df) + 
     geom_point(aes(x = target_site, y = on_off_max_ratio, fill = lab), 
                shape = 21, alpha = 0.5) + 
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90)) +
         labs(x = "Editing Target Site", y = "On-Target Rate to Most \n Prevalent Off-Target", 
-         fill = "Lab")
+         fill = "Lab"))
 ```
 
 As seen with the on-target rate considering total read counts, NIST has higher rates than St. Jude-sequenced samples. 
@@ -469,7 +471,7 @@ diff_cat_read_count_df <- substitution_readcount_df %>%
   rename(read_count = substitution_read_count) %>% 
   bind_rows(indel_df)
 
-ggplot(diff_cat_read_count_df) +
+ggplotly(ggplot(diff_cat_read_count_df) +
     geom_bar(aes(x = diff_cat, y = read_count,
                  fill = lab), 
              position = "dodge", stat = "identity") +
@@ -477,7 +479,7 @@ ggplot(diff_cat_read_count_df) +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
     labs(x = "Alignment  Type", y = "Read Count",
-         fill = "Lab")
+         fill = "Lab"))
 ```
 
 ### Number of Locations (Sequences) per Off-Target Sequence Alignment Type
@@ -509,7 +511,7 @@ off_targ_num_seq_df <- off_target_df %>%
               names_to = "classification", values_to = "num_seqs")
 
 
-ggplot(off_targ_num_seq_df) +
+ggplotly(ggplot(off_targ_num_seq_df) +
     geom_bar(aes(x = classification, y = num_seqs,
                  fill = lab), 
              position = "dodge", stat = "identity") +
@@ -517,7 +519,7 @@ ggplot(off_targ_num_seq_df) +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90)) + 
     labs(x = "Alignment  Type", y = "Number of Sequences/ \n Off-Target Locations",
-         fill = "Lab")
+         fill = "Lab"))
 ```
 
 
@@ -544,7 +546,7 @@ venn_df <- off_target_df %>%
   pivot_wider(names_from = "lab", values_from = "Nuclease_Read_Count", values_fill = NA) %>%
   left_join(off_target_lab_set)
 
-ggplot(data = venn_df) + 
+ggplotly(ggplot(data = venn_df) + 
   geom_bar(aes(x = target_site, fill = lab_set), 
            # position = "fill"
            position = "fill"
@@ -553,12 +555,12 @@ ggplot(data = venn_df) +
   theme_bw() + 
   labs(x = "Target Site", 
        y = "Proportion of Coordinates", 
-       fill = "Lab Combinations")
+       fill = "Lab Combinations"))
 ```
 
 ```{r}
 venn_df %>% group_by(target_site) %>% 
-  count(lab_set) %>% 
+ count(lab_set) %>% 
   pivot_wider(names_from = "lab_set", values_from = "n", values_fill = 0)
 ```
 
@@ -570,8 +572,8 @@ To mimic the plots of Figure1, i in the CHANGE-Seq manuscript, common genomic co
 ```{r}
 ## Data frame with counts by genomic corrdinate and lab
 counts_by_lab <- summary_df %>% 
-  # Only including substitution off target edits
-  filter(Sub_Only) %>% 
+  # Only including off target edits
+  filter(!Site_Substitution_Number == 0) %>% 
   ## Excluding redundant and unnecessary columns
   # Extra columns results in non-matching counts by lab
   select(Chromosome, Start, End, Strand, Site_Sequence, 
@@ -651,20 +653,20 @@ The read count values for the off-target coordinates unique to replicate 1, repl
 nnn_nsn_lab_set <- off_target_df %>%
   select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
   group_by(`Genomic Coordinate`, target_site) %>% 
-  filter(lab != "NSS") %>% 
+  filter(lab != "NSS1") %>% 
   summarise(lab_set = str_c(sort(lab), collapse = "-"))
 
 rep_count_scatter_df <- off_target_df %>%
   select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
-  filter(lab != "NSS") %>% 
+  filter(lab != "NSS1") %>% 
   right_join(nnn_nsn_lab_set) %>% 
   count(target_site, lab_set, Nuclease_Read_Count, name = "Occurence")
   
-ggplot(rep_count_scatter_df) + 
+ggplotly(ggplot(rep_count_scatter_df) + 
   geom_point(aes(x = Nuclease_Read_Count, y = Occurence, fill = lab_set), shape = 21) + 
   scale_x_log10() + 
   facet_wrap(~target_site, scales = "free_y", ncol = 1) +
-  theme_bw()
+  theme_bw())
 ```
 
 
@@ -674,35 +676,54 @@ ggplot(rep_count_scatter_df) +
 nnn_nsn_lab_set <- off_target_df %>%
   select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
   group_by(`Genomic Coordinate`, target_site) %>% 
-  filter(lab != "NSS") %>% 
+  filter(lab != "NSS1") %>% 
   summarise(lab_set = str_c(sort(lab), collapse = "-"))
 
 rep_count_scatter_df <- off_target_df %>%
   select(`Genomic Coordinate`, target_site, lab, Nuclease_Read_Count) %>% 
-  filter(lab != "NSS") %>% 
+  filter(lab != "NSS1") %>% 
   right_join(nnn_nsn_lab_set)
 
-ggplot(rep_count_scatter_df) + 
+ggplotly(ggplot(rep_count_scatter_df) + 
   geom_histogram(aes(x = Nuclease_Read_Count, fill = lab_set)) + 
   scale_x_log10() + 
   facet_wrap(~target_site, scales = "free_y", ncol = 1) +
-  theme_bw()
-
+  theme_bw())
 ```
 
 **This is plotting the proportion of sites (occurrence / total read count) as opposed to just occurrence number as an attempt to normalize**
 
 ```{r}
-rep_count_scatter_df %>% 
-  mutate(lab_set = factor(lab_set, level = c("NNN-NSN", "NNN","NSN"))) %>% 
-ggplot() + 
+#rep_count_scatter_df %>% 
+#  mutate(lab_set = factor(lab_set, level = c("NNN1-NSN1", "NNN2-NSN1", "NNN1-NNN2-NSN1", "NNN1","NSN1", "NNN2"))) %>% 
+ggplotly(ggplot(rep_count_scatter_df) + 
   geom_histogram(aes(x = Nuclease_Read_Count, fill = lab_set), position = "fill") + 
   scale_x_log10() + 
   facet_wrap(~target_site, scales = "free_y", ncol = 1) +
   theme_bw() +
   scale_fill_brewer(type = "qual", palette = 2) +
-  labs(x = "Read Count", y = "Proportion of Sites")
+  labs(x = "Read Count", y = "Proportion of Sites"))
+```
 
+Grouping by Number of labs instead of showing specific labs:
+
+
+```{r}
+rev_rep_count_scatter_df <-  rep_count_scatter_df %>% 
+  mutate(num_labs =  factor((str_count(lab_set, "-") + 1)))
+
+ggplotly(ggplot(rev_rep_count_scatter_df) + 
+  geom_histogram(aes(x = Nuclease_Read_Count, fill = num_labs), position = "fill") + 
+  scale_x_log10() + 
+  facet_wrap(~target_site, scales = "free_y", ncol = 1) +
+  theme_bw() +
+  scale_fill_brewer(type = "qual", palette = 2) +
+  labs(x = "Read Count", y = "Proportion of Sites"))
+```
+
+```{r}
+#rev_rep_count_scatter_df <-  rep_count_scatter_df %>% 
+#  mutate(num_labs =  fct_reorder(num_labs, desc(((str_count(lab_set, "-") + 1)))))
 ```
 
 ==================================================================================================================================================
