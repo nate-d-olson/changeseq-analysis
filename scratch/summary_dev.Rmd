@@ -710,7 +710,8 @@ Grouping by Number of labs instead of showing specific labs:
 
 ```{r}
 rev_rep_count_scatter_df <-  rep_count_scatter_df %>% 
-  mutate(num_labs =  factor((str_count(lab_set, "-") + 1)))
+  mutate(num_labs =  str_count(lab_set, "-") + 1,
+         num_labs =  fct_reorder(as.character(num_labs), -num_labs))
 
 ggplotly(ggplot(rev_rep_count_scatter_df) + 
   geom_histogram(aes(x = Nuclease_Read_Count, fill = num_labs), position = "fill") + 
