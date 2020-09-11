@@ -557,11 +557,19 @@ ggplotly(ggplot(data = venn_df) +
        y = "Proportion of Coordinates", 
        fill = "Lab Combinations"))
 ```
+```{r}
+venn_df
+```
 
 ```{r}
 venn_df %>% group_by(target_site) %>% 
- count(lab_set) %>% 
-  pivot_wider(names_from = "lab_set", values_from = "n", values_fill = 0)
+ count(lab_set)  %>% 
+  group_by(lab_set) %>% 
+  mutate(lab_set_total = sum(n)) %>% 
+  mutate(pct = round(n/lab_set_total * 100, 0),
+         count_value = paste0(n, " (", pct, "%)")) %>% 
+  select(-n, -lab_set_total, -pct) %>% 
+  pivot_wider(names_from = "lab_set", values_from = "count_value")
 ```
 
 ### Read Count Replicate v Replicate Scatter Plots
