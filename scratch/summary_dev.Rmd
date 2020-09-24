@@ -1,5 +1,5 @@
 ---
-title: "Summary Re-write of Sierra's Replicate Analysis Using Tidyverse"
+title: "2020 CHANGE-Seq Samples A-F Replicate Analysis"
 date: '`r Sys.Date()`'
 output: 
     bookdown::html_document2:
@@ -557,11 +557,12 @@ ggplotly(ggplot(data = venn_df) +
        y = "Proportion of Coordinates", 
        fill = "Lab Combinations"))
 ```
-```{r}
-venn_df
-```
 
 ```{r}
+#venn_df %>% group_by(target_site) %>% 
+# count(lab_set) %>% 
+#  pivot_wider(names_from = "lab_set", values_from = "n", values_fill = 0)
+
 venn_df %>% group_by(target_site) %>% 
  count(lab_set)  %>% 
   group_by(lab_set) %>% 
@@ -720,7 +721,7 @@ Grouping by Number of labs instead of showing specific labs:
 rev_rep_count_scatter_df <-  rep_count_scatter_df %>% 
   mutate(num_labs =  str_count(lab_set, "-") + 1,
          num_labs =  fct_reorder(as.character(num_labs), -num_labs))
-
+         
 ggplotly(ggplot(rev_rep_count_scatter_df) + 
   geom_histogram(aes(x = Nuclease_Read_Count, fill = num_labs), position = "fill") + 
   scale_x_log10() + 
@@ -728,11 +729,6 @@ ggplotly(ggplot(rev_rep_count_scatter_df) +
   theme_bw() +
   scale_fill_brewer(type = "qual", palette = 2) +
   labs(x = "Read Count", y = "Proportion of Sites"))
-```
-
-```{r}
-#rev_rep_count_scatter_df <-  rep_count_scatter_df %>% 
-#  mutate(num_labs =  fct_reorder(num_labs, desc(((str_count(lab_set, "-") + 1)))))
 ```
 
 ==================================================================================================================================================
